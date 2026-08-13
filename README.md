@@ -2,7 +2,7 @@
  
 ---
 
-## 1. Project Overview (What are we building?)
+## 1. Project Overview 
 
 **AEGIS** is a persistent AI agent that acts as a long-term, intelligent moderator and community caretaker for content creators.
 
@@ -31,7 +31,7 @@ Our agent directly attacks these problems by becoming the community’s permanen
 
 ---
 
-## 3. How It Works (High-Level Flow)
+## 3. How It Works 
 
 
 ### Step-by-step process:
@@ -121,7 +121,7 @@ Day 7: Agent already knows the community hates self-promotion but loves meme sha
 
 ---
 
-## 6. Technical Architecture (For the team)
+## 6. Technical Architecture 
 
 ┌─────────────────────┐
 │  Platform (Discord /│
