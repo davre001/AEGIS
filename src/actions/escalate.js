@@ -14,6 +14,6 @@ export async function escalate(bot, { chatTitle, sender, messageText, escalation
     await bot.telegram.sendMessage(config.escalationChatId, summary);
     logger.info({ chatTitle, senderId: sender.id }, "escalated to human moderator");
   } catch (err) {
-    logger.error({ chatTitle, senderId: sender.id, err: err.message }, "failed to escalate");
+    logger.error({ chatTitle, senderId: sender.id, err }, "failed to escalate");
   }
 }

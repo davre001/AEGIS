@@ -3,12 +3,15 @@ import { logger } from "./utils/logger.js";
 import { createBot } from "./bot/bot.js";
 
 process.on("unhandledRejection", (err) => {
-  logger.fatal({ err: err?.message || err }, "unhandled rejection");
+  // A rejected promise can reject with a non-Error value; pino's err
+  // serializer passes non-Error-like values through unchanged rather than
+  // throwing, so this is safe either way.
+  logger.fatal({ err }, "unhandled rejection");
   process.exit(1);
 });
 
 process.on("uncaughtException", (err) => {
-  logger.fatal({ err: err.message }, "uncaught exception");
+  logger.fatal({ err }, "uncaught exception");
   process.exit(1);
 });
 
@@ -29,6 +32,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  logger.fatal({ err: err.message }, "failed to start AEGIS");
+  logger.fatal({ err }, "failed to start AEGIS");
   process.exit(1);
 });

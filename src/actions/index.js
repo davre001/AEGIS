@@ -30,7 +30,7 @@ export async function dispatchDecision(bot, decision, ctx) {
     case "welcome":
       return welcome(bot, { chatId, text: decision.replyContent, member: member || sender });
     case "none":
-      logger.debug({ chatId, reason: decision.reason }, "no action taken");
+      logger.info({ chatId, reason: decision.reason }, "no action taken");
       return;
     default:
       logger.warn({ action: decision.action }, "unknown decision action; ignoring");

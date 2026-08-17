@@ -12,7 +12,7 @@ export function createBot() {
   // Telegraf-level errors (bad updates, middleware throws we missed) land
   // here instead of killing the process.
   bot.catch((err, ctx) => {
-    logger.error({ updateType: ctx.updateType, err: err.message }, "unhandled bot error");
+    logger.error({ updateType: ctx.updateType, err }, "unhandled bot error");
   });
 
   return bot;

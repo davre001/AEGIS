@@ -84,7 +84,7 @@ export function createAgentClient(sdkClient, mindId) {
           // Minds has the message or not. Don't retry blind — surface it as
           // "no decision" for this message rather than risk a duplicate post.
           logger.error(
-            { alias, status: err?.status, code: err?.code, err: err.message },
+            { alias, status: err?.status, code: err?.code, err },
             "sendMessage failed; not retrying blind",
           );
           return null;
@@ -107,7 +107,7 @@ export function createAgentClient(sdkClient, mindId) {
         // point in some of these cases, so this is "unknown," not "nothing
         // happened." We still can't act on it, so collapse to null rather
         // than let it crash the caller.
-        logger.error({ alias, status: err?.status, code: err?.code, err: err.message }, "minds agent call failed");
+        logger.error({ alias, status: err?.status, code: err?.code, err }, "minds agent call failed");
         return null;
       }
     });

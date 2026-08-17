@@ -11,6 +11,6 @@ export async function restrictUser(bot, { chatId, userId, restrictSeconds, reaso
     });
     logger.info({ chatId, userId, seconds, reason }, "restricted user");
   } catch (err) {
-    logger.error({ chatId, userId, err: err.message }, "failed to restrict user");
+    logger.error({ chatId, userId, err }, "failed to restrict user");
   }
 }

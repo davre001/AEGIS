@@ -6,6 +6,6 @@ export async function welcome(bot, { chatId, text, member }) {
     await bot.telegram.sendMessage(chatId, message);
     logger.info({ chatId, memberId: member.id }, "welcomed new member");
   } catch (err) {
-    logger.error({ chatId, memberId: member.id, err: err.message }, "failed to welcome member");
+    logger.error({ chatId, memberId: member.id, err }, "failed to welcome member");
   }
 }

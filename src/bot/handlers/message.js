@@ -36,7 +36,7 @@ export async function handleMessage(bot, ctx) {
 
     await dispatchDecision(bot, decision, { chatId, messageId, userId: sender.id, chatTitle, sender, messageText });
   } catch (err) {
-    logger.error({ chatId, senderId: sender.id, err: err.message }, "failed to handle message");
+    logger.error({ chatId, senderId: sender.id, err }, "failed to handle message");
   }
 }
 
@@ -54,7 +54,7 @@ export async function handleNewMember(bot, ctx) {
       const decision = parseDecision(rawReply);
       await dispatchDecision(bot, decision, { chatId, member, sender: member, chatTitle });
     } catch (err) {
-      logger.error({ chatId, memberId: member.id, err: err.message }, "failed to handle new member");
+      logger.error({ chatId, memberId: member.id, err }, "failed to handle new member");
     }
   }
 }

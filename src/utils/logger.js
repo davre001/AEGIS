@@ -11,6 +11,11 @@ const nodeEnv = process.env.NODE_ENV || "development";
 
 export const logger = pino({
   level: logLevel,
+  // Every call site logs the raw Error under the `err` key (not err.message)
+  // so this serializer can expand it into { type, message, stack } — losing
+  // the stack trace on an unexpected throw is the difference between a
+  // five-minute fix and an hour of guessing where it came from.
+  serializers: { err: pino.stdSerializers.err },
   transport:
     nodeEnv === "development"
       ? { target: "pino-pretty", options: { colorize: true, translateTime: "HH:MM:ss" } }

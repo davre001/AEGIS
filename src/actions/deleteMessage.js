@@ -5,6 +5,6 @@ export async function deleteMessage(bot, { chatId, messageId, reason }) {
     await bot.telegram.deleteMessage(chatId, messageId);
     logger.info({ chatId, messageId, reason }, "deleted message");
   } catch (err) {
-    logger.error({ chatId, messageId, err: err.message }, "failed to delete message");
+    logger.error({ chatId, messageId, err }, "failed to delete message");
   }
 }
