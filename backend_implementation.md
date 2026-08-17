@@ -85,7 +85,7 @@ Decision
 
 | Component              | Technology                      |
 |------------------------|---------------------------------|
-| Runtime                | Node.js (v20+)                  |
+| Runtime                | Node.js (v22+ — required by the Minds client library) |
 | Telegram Framework     | **Telegraf**                    |
 | Persistent Agent       | **Minds by Animoca Brands**     |
 | Environment            | dotenv                          |
@@ -156,8 +156,8 @@ aegis/
 ```env
 TELEGRAM_BOT_TOKEN=your_bot_token
 
-MINDS_API_KEY=your_minds_api_key
-MINDS_AGENT_ID=your_agent_id
+MINDS_BUILDER_API_KEY=your_minds_builder_api_key
+MINDS_MIND_ID=your_mind_id
 ESCALATION_CHAT_ID=private_group_or_user_id
 
 ## 9. Suggested Responses

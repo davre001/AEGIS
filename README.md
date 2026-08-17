@@ -192,19 +192,29 @@ Day 7: Agent already knows the community hates self-promotion but loves meme sha
 
 ## 11. Setup Instructions (for teammates)
 
+The platform is Telegram (not Discord — see `backend_implementation.md`),
+and the backend is Node.js + Telegraf + Minds. See `docs/API_NOTES.md` and
+`docs/LIMITATIONS.md` for what's been verified against the real Minds SDK.
+
 ```bash
-git clone https://github.com/your-team/context-aware-community-steward.git
-cd context-aware-community-steward
+git clone <this repo's URL>
+cd AEGIS
 
 # Install dependencies
-npm install          # or pip install -r requirements.txt
+npm install
 
 # Configure
 cp .env.example .env
 # Fill in:
-# - MINDS_API_KEY
-# - DISCORD_BOT_TOKEN
-# - etc.
+# - TELEGRAM_BOT_TOKEN   (from @BotFather)
+# - MINDS_BUILDER_API_KEY
+# - MINDS_MIND_ID
+# - ESCALATION_CHAT_ID
+
+# Verify without any credentials (no secrets/network required)
+npm run lint
+npm test
 
 # Run
 npm start
+```

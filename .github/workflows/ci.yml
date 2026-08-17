@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm test
+
+  syntax-check:
+    # AEGIS has no bundler/build step (it's a plain Node ESM backend), so
+    # this is the closest equivalent to a "build" gate: every source file
+    # must at least parse. See docs/API_NOTES.md for why Node 22+ is
+    # required (the Minds client library enforces it).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: find src test -name '*.js' -print0 | xargs -0 -n1 node --check
+
+  secret-scan:
+    # Guardrail-as-code for CLAUDE.md's "don't commit a secret" rule, which
+    # otherwise only exists as a sentence a future PR could ignore. Fails
+    # the build if .env is ever tracked, or if a real-looking Telegram bot
+    # token (not the dummy values in .env.example) lands in a tracked file.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if .env is tracked
+        run: |
+          if git ls-files | grep -qx '\.env'; then
+            echo "::error::.env is tracked in git — remove it and rotate any exposed credentials."
+            exit 1
+          fi
+      - name: Fail on a real-looking Telegram bot token in tracked files
+        run: |
+          if git grep -InE '[0-9]{6,}:[A-Za-z0-9_-]{30,}' -- . ':!package-lock.json' ':!.env.example'; then
+            echo "::error::found a string shaped like a live Telegram bot token in a tracked file."
+            exit 1
+          fi

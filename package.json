@@ -1,0 +1,28 @@
+{
+  "name": "aegis",
+  "version": "0.1.0",
+  "description": "Persistent AI moderation agent for Telegram communities, backed by Minds.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test",
+    "lint": "eslint ."
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@animocabrands/minds-client-lib": "^0.1.0",
+    "dotenv": "^16.4.5",
+    "pino": "^9.4.0",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.1",
+    "pino-pretty": "^11.2.2"
+  }
+}
