@@ -3,19 +3,34 @@
 What AEGIS's backend does not handle yet, stated plainly rather than left
 for a reviewer to discover.
 
-## Not yet tested against a live agent
+## Live agent run (2026-08-18): out of credits + persona mismatch
 
-Nothing in `src/agent/` has been run against a real `MINDS_BUILDER_API_KEY`
-/ `MINDS_MIND_ID` — this environment has neither. What's verified so far is
-that the code matches the SDK's actual exported functions and signatures
-(checked directly against the installed package), and that config loading,
-logging, decision parsing, and retry logic behave correctly in isolation.
-Whether the agent reliably returns the JSON decision contract we ask for in
-`src/agent/prompt.js`, and what real reply latency looks like, is untested.
-`parseDecision` (`src/agent/decision.js`) falls back to a safe `"none"`
-action on any malformed reply, so a prompt that isn't followed perfectly
-degrades to inaction rather than a crash or a wrong action — but the prompt
-itself still needs real tuning once credentials exist.
+First real run against a live Mind surfaced two account-level blockers, not
+code bugs — both degraded safely to `"none"` per the decision-contract
+invariant, but neither lets AEGIS actually moderate yet:
+
+- **Out of cognition credits.** The Mind's replies included an explicit
+  "I'm currently out of cognition credits" message with a top-up link. The
+  two `waitForReply` timeouts immediately before that in the same session
+  are almost certainly the same cause. Needs a human to top up credits on
+  build.hellominds.ai for this Mind before further live testing is useful.
+- **Persona/system-prompt mismatch.** The Mind is configured on the
+  builder dashboard with its own "companion mind" persona and explicitly
+  refused to adopt the AEGIS moderation role and JSON contract from
+  `src/agent/prompt.js`'s in-message framing ("I don't take on roles like
+  that on demand"). As documented in `docs/API_NOTES.md`, the Minds SDK has
+  no separate system-instruction parameter — a Mind's persona is set once
+  on the dashboard and applies to every message. **This Mind's
+  dashboard-configured system prompt needs to be set to the AEGIS
+  moderation role directly; prepending instructions per-message is not
+  sufficient on its own.**
+
+`parseDecision` (`src/agent/decision.js`) correctly fell back to `"none"`
+on both the timeout and the malformed-prose reply, so a Mind that isn't
+credited or isn't configured correctly degrades to inaction rather than a
+crash or a wrong action. Real reply latency and JSON-contract adherence
+with a properly credited, correctly-configured Mind are still unmeasured —
+retest once both blockers above are resolved.
 
 ## No persisted reconciliation for ambiguous sends
 

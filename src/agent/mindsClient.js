@@ -116,5 +116,14 @@ export function createAgentClient(sdkClient, mindId) {
   return { askAgent, aliasForChat };
 }
 
-const defaultAgentClient = createAgentClient(createMindsClient(), config.mindsMindId);
+/**
+ * Wires the real Minds SDK client to createAgentClient. Split out from bare
+ * module-scope so tests can inject a spy in place of createMindsClient and
+ * assert the builder API key actually reaches it, without needing a live key.
+ */
+export function buildDefaultAgentClient({ createClient = createMindsClient, cfg = config } = {}) {
+  return createAgentClient(createClient({ builderApiKey: cfg.mindsBuilderApiKey }), cfg.mindsMindId);
+}
+
+const defaultAgentClient = buildDefaultAgentClient();
 export const askAgent = defaultAgentClient.askAgent;

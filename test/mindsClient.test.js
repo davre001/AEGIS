@@ -9,7 +9,23 @@ process.env.MINDS_BUILDER_API_KEY ??= "dummy";
 process.env.MINDS_MIND_ID ??= "dummy-mind";
 process.env.ESCALATION_CHAT_ID ??= "123";
 
-const { createAgentClient } = await import("../src/agent/mindsClient.js");
+const { createAgentClient, buildDefaultAgentClient } = await import("../src/agent/mindsClient.js");
+
+test("buildDefaultAgentClient passes the configured builder API key to createClient", () => {
+  let receivedOptions;
+  const cfg = { mindsBuilderApiKey: "test-key-123", mindsMindId: "mind-xyz" };
+  const fakeSdk = { askAgent: () => {} };
+
+  buildDefaultAgentClient({
+    createClient: (options) => {
+      receivedOptions = options;
+      return fakeSdk;
+    },
+    cfg,
+  });
+
+  assert.deepEqual(receivedOptions, { builderApiKey: "test-key-123" });
+});
 
 function makeFakeSdk({ sendMessage, waitForReply } = {}) {
   const calls = { ensureConversation: 0, getLatestHistoryFingerprint: 0, sendMessage: 0, waitForReply: 0 };

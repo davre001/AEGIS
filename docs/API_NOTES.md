@@ -17,12 +17,19 @@ signatures — not just the docs.
 - **Auth:** `MINDS_BUILDER_API_KEY` env var (exported as `BUILDER_API_KEY_ENV`
   from the package), sent as the `X-Api-Key` header. `X-Access-Key` /
   `--access-key` are deprecated — don't use them.
-- **Client init:** `createMindsClient()` takes no arguments in the
-  documented/observed usage; it reads the API key from the environment
-  itself. Throws `missing_builder_api_key` at call time if the key is
-  absent — this is a runtime throw, not caught by our own env validation in
-  `src/config.js` (which only checks the var is *set*, not that Minds
-  accepts it).
+- **Client init:** `createMindsClient(options)` does **not** read the API
+  key from the environment itself — `BUILDER_API_KEY_ENV` exported by the
+  package is just the string constant `"MINDS_BUILDER_API_KEY"` (a naming
+  convention for callers), not something the SDK reads via `process.env`
+  internally (verified by grepping the installed `dist/index.js`: no
+  `process.env` reference anywhere in the package). The key must be passed
+  explicitly: `createMindsClient({ builderApiKey: config.mindsBuilderApiKey })`,
+  as done in `src/agent/mindsClient.js`. Omitting it doesn't throw at
+  `createMindsClient()` call time — it throws `missing_builder_api_key`
+  later, the first time an authenticated call is actually made
+  (`requireBuilderApiKey` inside `buildMindsClient`). This is a runtime
+  throw, not caught by our own env validation in `src/config.js` (which
+  only checks the var is *set*, not that Minds accepts it).
 - **Conversation model:** a Mind is addressed indirectly through a stable
   `alias` string. `ensureConversation(alias, mindId)` binds an alias to a
   specific Mind and is idempotent — calling it again for an alias that's
@@ -46,13 +53,27 @@ signatures — not just the docs.
   request was rejected before Minds acted on it). 5xx is undocumented in
   detail; we treat it as ambiguous (see reconciliation note below), not as
   "definitely failed."
-- **Not yet verified against a live agent** (no `MINDS_BUILDER_API_KEY` /
-  `MINDS_MIND_ID` in this environment): actual reply latency, whether
-  `waitForReply`'s `timeoutMs` needs tuning up/down from the 30s default in
-  `src/agent/mindsClient.js`, and whether the agent reliably returns the
-  JSON decision contract we ask for in `src/agent/prompt.js` without
-  drifting into prose. Test this the moment credentials exist — see
-  `docs/LIMITATIONS.md`.
+- **No system-prompt/persona parameter anywhere in the SDK.** Verified by
+  reading `createConversation`, `sendMessage`, and `ensureConversation` in
+  the installed `dist/index.js`: their request bodies only ever carry
+  `alias`, `mindId`, and message text/content — there is no field for
+  per-request system instructions. A Mind's persona/system prompt is
+  configured once on the builder dashboard (build.hellominds.ai) and
+  applies to every conversation with that Mind; `SYSTEM_FRAMING` in
+  `src/agent/prompt.js` is just plain text prepended into the message body,
+  not a privileged instruction channel. **Consequence:** if a Mind's
+  dashboard-configured persona conflicts with the moderation role AEGIS
+  asks it to play in-message, the Mind can and does refuse in prose instead
+  of returning the JSON decision contract (observed live 2026-08-18 — see
+  `docs/LIMITATIONS.md`). The Mind used for AEGIS moderation must have its
+  actual system prompt/persona set on the builder dashboard to match the
+  moderation role; in-message framing alone is not reliable.
+- **Live-verified 2026-08-18** (first real run against a live Mind):
+  `waitForReply`'s 30s default timeout was hit twice with no reply at all
+  before any reply arrived — consistent with the account being out of
+  cognition credits (see `docs/LIMITATIONS.md`) rather than normal latency.
+  Real steady-state reply latency with credits available and a
+  correctly-configured persona is still unmeasured.
 
 ## Telegram (via `telegraf`)
 
