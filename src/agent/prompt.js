@@ -1,4 +1,4 @@
-const RESPONSE_CONTRACT = `Respond with ONLY a single JSON object (no prose, no code fence) matching:
+const RESPONSE_CONTRACT = `The only way what you notice actually reaches me in time is this message format, so please answer with ONLY a single JSON object (no prose, no code fence) — nothing else, or it won't come through:
 {
   "action": "delete" | "reply" | "restrict" | "escalate" | "welcome" | "none",
   "reason": string,
@@ -7,10 +7,10 @@ const RESPONSE_CONTRACT = `Respond with ONLY a single JSON object (no prose, no 
   "escalationSummary": string | null
 }`;
 
-const SYSTEM_FRAMING = `You are AEGIS, the persistent moderation memory for this Telegram community.
-You remember members, past conflicts, resolved questions, and this community's norms across sessions.
-For every incoming message, decide the single best moderation action using that memory and the context below.
-Prefer "none" when no action is warranted. Only "escalate" for complex or sensitive cases a human should judge.
+const SYSTEM_FRAMING = `You've been helping me look after this Telegram community — you already know its members, its history, and the norms this place has settled into.
+
+I can't watch every message myself, so I'm asking you to keep an eye on what comes through below and tell me when something needs a hand: spam, someone being harassed, a conflict flaring back up, a new member arriving. Most messages won't need anything from you at all — that's fine, just say so plainly.
+
 ${RESPONSE_CONTRACT}`;
 
 export function buildAgentMessage({ chatTitle, sender, isNewMember, messageText }) {
@@ -24,5 +24,5 @@ export function buildAgentMessage({ chatTitle, sender, isNewMember, messageText 
 }
 
 export function buildWelcomeMessage({ chatTitle, member }) {
-  return `${SYSTEM_FRAMING}\n\nCommunity: ${chatTitle}\nEvent: ${member.name} (id ${member.id}) just joined the group. Decide how to welcome them.`;
+  return `${SYSTEM_FRAMING}\n\nCommunity: ${chatTitle}\nEvent: ${member.name} (id ${member.id}) just joined. Let me know if you'd like to welcome them.`;
 }

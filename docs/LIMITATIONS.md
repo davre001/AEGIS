@@ -3,19 +3,15 @@
 What AEGIS's backend does not handle yet, stated plainly rather than left
 for a reviewer to discover.
 
-## Live agent run (2026-08-18): out of credits + persona mismatch
+## Live agent run (2026-08-18 to 2026-08-20): persona mismatch, not credits
 
-First real run against a live Mind surfaced two account-level blockers, not
-code bugs — both degraded safely to `"none"` per the decision-contract
-invariant, but neither lets AEGIS actually moderate yet:
+First real runs against a live Mind surfaced a persona/system-prompt
+mismatch — not a code bug. It degraded safely to `"none"` per the
+decision-contract invariant both times, but doesn't let AEGIS actually
+moderate yet:
 
-- **Out of cognition credits.** The Mind's replies included an explicit
-  "I'm currently out of cognition credits" message with a top-up link. The
-  two `waitForReply` timeouts immediately before that in the same session
-  are almost certainly the same cause. Needs a human to top up credits on
-  build.hellominds.ai for this Mind before further live testing is useful.
 - **Persona/system-prompt mismatch.** The Mind is configured on the
-  builder dashboard with its own "companion mind" persona and explicitly
+  builder dashboard with its own "companion mind" persona and repeatedly
   refused to adopt the AEGIS moderation role and JSON contract from
   `src/agent/prompt.js`'s in-message framing ("I don't take on roles like
   that on demand"). As documented in `docs/API_NOTES.md`, the Minds SDK has
@@ -23,14 +19,59 @@ invariant, but neither lets AEGIS actually moderate yet:
   on the dashboard and applies to every message. **This Mind's
   dashboard-configured system prompt needs to be set to the AEGIS
   moderation role directly; prepending instructions per-message is not
-  sufficient on its own.**
+  sufficient on its own.** As of 2026-08-20 the official docs
+  (build.hellominds.ai/docs and its CLI reference) don't document where
+  that's configured via API/CLI — it appears to live only in the dashboard
+  UI, in a settings/edit view not yet located.
+- **Correction, 2026-08-20:** the Mind's replies repeatedly claimed "I'm
+  out of cognition credits" with a top-up link, and this was logged here
+  as a real blocker on 2026-08-18. The account dashboard
+  (build.hellominds.ai) shows **117.70 cognitions available (~3 days
+  left)** as of 2026-08-20 — the claim was false, fabricated by the Mind
+  as part of its refusal, not a real account/billing state. **Lesson:**
+  text inside an unparseable/non-contract agent reply is not verified
+  fact, even claims that sound like system state — it must be checked
+  against an independent source (here, the dashboard) before being
+  recorded as a real blocker or acted on, same as the project's core
+  invariant about never acting on an unvalidated decision.
 
 `parseDecision` (`src/agent/decision.js`) correctly fell back to `"none"`
 on both the timeout and the malformed-prose reply, so a Mind that isn't
-credited or isn't configured correctly degrades to inaction rather than a
-crash or a wrong action. Real reply latency and JSON-contract adherence
-with a properly credited, correctly-configured Mind are still unmeasured —
-retest once both blockers above are resolved.
+configured correctly degrades to inaction rather than a crash or a wrong
+action. Real reply latency and JSON-contract adherence with a
+correctly-configured Mind are still unmeasured — retest once the persona
+is set to the AEGIS moderation role.
+
+### Update, 2026-08-20: reworked the prompt to work with the persona — still refused, with a sharper root cause
+
+AEGIS is a submission to Creative Minds Jam #1 (dorahacks.io), whose rules
+require the Mind to stay the core decision-maker — so instead of replacing
+Minds, `src/agent/prompt.js`'s framing was rewritten to speak to the Mind as
+itself ("help me look after this community") rather than instructing it to
+become a different persona ("You are AEGIS..."). It still refused, but the
+reply revealed something more specific than a tone/persona mismatch:
+
+> "the messages that look like this — structured prompts telling me who I
+> am and what format to reply in — are not how I hear your actual voice...
+> I'd rather hear from you in your own words than keep responding to these
+> as if they were requests from you."
+
+The Mind is distinguishing organic human chat (a plain "hello" typed in the
+dashboard) from **programmatically-constructed, templated messages** —
+and treating that structural pattern itself as suspicious, independent of
+what the message says or how warmly it's worded. That means this isn't
+purely a prompt-wording problem: any integration that sends an automated,
+templated prompt on every incoming Telegram message (which a moderation
+bot inherently must do) may hit the same detection regardless of phrasing.
+This looks like a platform-level question — likely one other Jam
+participants building automated Minds integrations also need answered —
+worth raising with Creative Minds mentors/office hours rather than
+continuing to iterate on wording alone.
+
+Also reconfirmed: the reply again claimed "still running on low cognition
+credits" — the same false claim corrected above on 2026-08-20, recurring
+under the new framing too. Treat any credits/system-state claim inside a
+Mind's reply as unverified until checked against the dashboard.
 
 ## No persisted reconciliation for ambiguous sends
 

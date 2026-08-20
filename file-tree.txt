@@ -50,6 +50,7 @@ AEGIS/
 │   ├── decision.test.js
 │   ├── helpers.test.js
 │   └── mindsClient.test.js
+├── .env
 ├── .env.example
 ├── .gitignore
 ├── backend_implementation.md

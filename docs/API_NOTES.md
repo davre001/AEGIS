@@ -36,8 +36,20 @@ signatures — not just the docs.
   already bound does not error (verified by reading the installed source:
   it catches the "already exists" case internally). AEGIS uses one alias
   per Telegram chat (`telegram-<chatId>`) so each community's conversation
-  — and therefore its memory — is isolated from every other community the
-  bot serves.
+  is isolated from every other community the bot serves — **but this
+  isolation may not extend to the Mind's own memory.** Live-observed
+  2026-08-20: the Mind referenced a "Hello" message sent through the Minds
+  dashboard chat UI directly (a different conversation/alias entirely) when
+  refusing a message sent via a Telegram-triggered alias, and later
+  referenced a prior Telegram-triggered message under yet another distinct
+  alias ("another one came through... shifted from 'Hello' to 'What's
+  up?'"). This suggests the Mind may carry memory (or at least pattern
+  recognition of recent inputs) at the Mind level, across conversations/
+  aliases — not scoped to the per-alias message history the way
+  `ensureConversation`'s alias binding implies. Unconfirmed mechanism (could
+  be genuine cross-conversation memory, or something else entirely) — flag
+  this to Creative Minds mentors alongside the persona-refusal question
+  rather than treating either alias isolation or its absence as settled.
 - **Sending a message / getting a reply** is two calls, not one:
   1. `sendMessage({ alias, messageText })` — fire-and-forget write.
   2. `waitForReply({ alias, timeoutMs, afterFingerprint })` — polls history
@@ -70,10 +82,17 @@ signatures — not just the docs.
   moderation role; in-message framing alone is not reliable.
 - **Live-verified 2026-08-18** (first real run against a live Mind):
   `waitForReply`'s 30s default timeout was hit twice with no reply at all
-  before any reply arrived — consistent with the account being out of
-  cognition credits (see `docs/LIMITATIONS.md`) rather than normal latency.
-  Real steady-state reply latency with credits available and a
+  before any reply arrived. Initially assumed to be a cognition-credits
+  issue based on the Mind's own reply text; the dashboard later showed
+  ~118 cognitions available (see `docs/LIMITATIONS.md`), so the real cause
+  of those two timeouts is unconfirmed — possibly first-message/cold-start
+  latency, unrelated to credits. Real steady-state reply latency with a
   correctly-configured persona is still unmeasured.
+- **No documented API/CLI path for configuring a Mind's persona.** Checked
+  build.hellominds.ai/docs and its CLI reference (`minds mind show`,
+  `mind.species`, etc.) on 2026-08-20 — persona/system-prompt/instructions
+  configuration isn't covered by either. It appears to be dashboard-UI-only,
+  in a settings view separate from the account overview page.
 
 ## Telegram (via `telegraf`)
 
