@@ -37,7 +37,7 @@ Our agent directly attacks these problems by becoming the community’s permanen
 ### Step-by-step process:
 
 1. **Ingest**  
-   The agent continuously receives messages from the connected platform (Discord / Telegram / etc.).
+   The agent continuously receives messages from Telegram.
 
 2. **Understand Context**  
    Using its persistent memory, the agent looks at:
@@ -124,8 +124,7 @@ Day 7: Agent already knows the community hates self-promotion but loves meme sha
 ## 6. Technical Architecture 
 
 ┌─────────────────────┐
-│  Platform (Discord /│
-│  Telegram / YouTube)│
+│  Platform (Telegram)│
 └──────────┬──────────┘
            │ Messages
            ▼
@@ -151,7 +150,7 @@ Day 7: Agent already knows the community hates self-promotion but loves meme sha
 
 
 **Key Components we need to build:**
-1. Platform connectors (start with Discord — easiest)
+1. Platform connector (Telegram via Telegraf)
 2. Minds agent configuration (system prompt + memory strategy)
 3. Action handlers (delete, reply, mute, escalate)
 4. Simple feedback loop (so the agent learns from human decisions)
@@ -162,15 +161,14 @@ Day 7: Agent already knows the community hates self-promotion but loves meme sha
 ## 7. MVP Scope for the Hackathon (What we must finish)
 
 **Must have (for strong demo):**
-- Working Discord bot connected to a Minds agent
+- Working Telegram bot connected to a Minds agent
 - Persistent memory that survives restarts
 - At least 3 autonomous actions (spam handling, repeated question reply, soft warning)
-- Escalation to a human (Discord DM or channel)
+- Escalation to a human (Telegram DM or private group)
 - Clear demonstration of memory across sessions
 
 **Nice to have:**
 - Simple web dashboard
-- Telegram support
 - Positive member recognition
 
 **Out of scope for this jam:**

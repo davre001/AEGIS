@@ -14,6 +14,21 @@ in a new file.
 
 - [ ] Create a bot via [@BotFather](https://t.me/BotFather) → copy the
       token into `TELEGRAM_BOT_TOKEN`.
+- [ ] **Do not use any "link this Mind directly to a Telegram bot" feature
+      on hellominds.ai for this token.** The only integration path is:
+      token → `.env` → this repo's own Telegraf process (`src/bot/bot.js`).
+      A direct website link wires a *second*, independent channel to the
+      same Mind — the Mind then receives the same conversation twice (once
+      raw via Minds' own connector, once wrapped in AEGIS's JSON-contract
+      prompt via this repo's SDK calls), which reproduces the persona-
+      refusal behavior in `docs/LIMITATIONS.md` almost exactly (the Mind's
+      own words: "structured prompts... are not how I hear your actual
+      voice"). Live-verified 2026-08-24: unlinking a direct connection made
+      no immediate difference in one retest, so this isn't confirmed as the
+      *sole* cause — but it's a confirmed architectural mismatch with how
+      this repo is built (see `README.md`/`backend_implementation.md`,
+      Telegraf is the only intended Telegram integration) and must stay
+      unlinked regardless while you keep investigating the refusal.
 - [ ] Create (or pick) a test Telegram group.
 - [ ] Add the bot to that group as **admin**, with specifically **Delete
       Messages** and **Restrict Members** permissions — not full admin.
@@ -24,19 +39,38 @@ in a new file.
       explicitly. You have to confirm by hand that delete/restrict actually
       work (step 5) — a missing permission fails silently (logged, not
       crashed) rather than telling you loudly.
+- [ ] **Run exactly one instance of the bot process at a time.** Telegram
+      allows only one active consumer (poller or webhook) per bot token —
+      a second instance (e.g. `npm run dev` left running in one terminal
+      plus a manual `npm start` in another) throws a 409 from Telegram's
+      side. Verified 2026-08-24 by reading `telegraf`'s own polling loop
+      (`node_modules/telegraf/lib/core/network/polling.js`): a 401 or 409
+      is re-thrown out of the polling loop, which crashes the whole AEGIS
+      process (`process.exit(1)` in `src/index.js`'s `main().catch`) rather
+      than logging and continuing. This contradicts this project's own
+      "never crash the process" invariant (`CLAUDE.md`) — flag it back
+      (see §6), don't try to fix it yourself.
 
 ## 2. Provision Minds
 
 - [ ] Sign up at [build.hellominds.ai](https://build.hellominds.ai), create
       a Builder API key → `MINDS_BUILDER_API_KEY`.
 - [ ] Create a Mind, copy its id → `MINDS_MIND_ID`.
+- [ ] **This Mind should only ever be reached through the SDK** —
+      `ensureConversation`/`sendMessage`/`waitForReply` from
+      `src/agent/mindsClient.js` — never through a dashboard-configured
+      connector to Telegram or any other chat platform. See §1's note on
+      why a direct link creates a second, conflicting channel into the same
+      Mind.
 - [ ] Open question `docs/API_NOTES.md` doesn't answer yet: whether/how to
       configure the Mind's own baseline persona on the Minds side, versus
       relying entirely on the per-message framing `src/agent/prompt.js`
       sends. Check the Minds docs/console for this and record what you find
       in `docs/API_NOTES.md` — right now the whole "AEGIS" persona is
       re-sent as part of every message, which may or may not be the
-      intended pattern for this SDK.
+      intended pattern for this SDK. As of 2026-08-24 this is still
+      unresolved — every live message gets a prose refusal, not the JSON
+      decision contract (see `docs/LIMITATIONS.md`'s 2026-08-24 update).
 
 ## 3. Escalation destination
 
@@ -77,14 +111,35 @@ live Minds/Telegram credentials. Each item maps to a named gap in
 `docs/API_NOTES.md` or `docs/LIMITATIONS.md` — go close them, then report
 back (step 6).
 
-- [ ] Bot boots and logs `AEGIS is online and listening for messages`.
+- [ ] ~~Bot boots and logs `AEGIS is online and listening for messages`~~ —
+      **this log line is currently unreachable, don't wait for it.**
+      Verified 2026-08-24 by reading `telegraf`'s `launch()`
+      (`node_modules/telegraf/lib/telegraf.js`): it `await`s
+      `startPolling()`, which only returns once the bot stops — so
+      `src/index.js`'s `await bot.launch()` blocks for the entire time the
+      bot is running, and the line right after it never executes during
+      normal operation. This is a real code bug (Telegraf's own docs call
+      `bot.launch()` *without* `await`), but it's a docs/log-line problem,
+      not a sign the bot is down — flag it back (§6), don't fix it
+      yourself. **The real "is it up" signal:** the process is still alive
+      (no crash, no `"failed to start AEGIS"` fatal log) a few seconds after
+      `npm start`.
 - [ ] Send an ordinary message in the test group → a `moderation decision`
       log line appears (`src/bot/handlers/message.js`) with an `action` and
       a `latencyMs`.
 - [ ] **Record real reply latency.** `askAgent`'s default `timeoutMs` is
       30s (`src/agent/mindsClient.js`) — a guess, never measured against a
       real Mind. Report the actual number rather than changing the code
-      yourself — see the guardrails note below on why.
+      yourself — see the guardrails note below on why. Live-verified
+      2026-08-24: real replies (still refusals, not the JSON contract) took
+      ~34–38s each — *longer* than the 30s default — without hitting the
+      timeout path. Don't be alarmed if you see similar numbers; do flag it
+      back if you see the actual `"minds agent reply timed out"` warning.
+- [ ] Expect `action: "none"` / `reason: "unparseable_agent_response"` on
+      every message until the persona question in §2 is resolved — that's
+      the known, already-logged refusal, not a new bug each time you see
+      it. Only report back if the *content* of the refusal changes in a way
+      not already captured in `docs/LIMITATIONS.md`.
 - [ ] **Confirm the agent's raw replies actually match the JSON decision
       contract** in `src/agent/prompt.js` without hand-holding. If it drifts
       into prose or a different shape often, `src/agent/decision.js` will

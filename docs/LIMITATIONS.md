@@ -73,6 +73,38 @@ credits" — the same false claim corrected above on 2026-08-20, recurring
 under the new framing too. Treat any credits/system-state claim inside a
 Mind's reply as unverified until checked against the dashboard.
 
+### Update, 2026-08-24: same refusal reproduced over real Telegram traffic
+
+Live bot (correct token, correct permissions, group privacy off, no
+dashboard-side Telegram connector linked to the Mind) received real group
+messages and every one round-tripped end to end — Telegram → `askAgent` →
+`parseDecision` — landing on `action: "none"`,
+`reason: "unparseable_agent_response"` per `parseDecision`'s safe-fallback
+contract. The raw replies are the same persona-refusal pattern documented
+above, now confirmed under real traffic rather than only manual/dashboard
+testing. Real reply latency for this path: ~34–38s per reply (recorded in
+`docs/API_NOTES.md`). Not a new bug — same open item, independently
+reconfirmed.
+
+### Update, 2026-08-24: dashboard independently confirms 0.00 cognitions on every Mind
+
+Distinct from the false "I'm out of cognition credits" claim corrected
+above (that came from inside an unparseable agent reply, and was checked
+against the dashboard on 2026-08-20 and found false at the time — 117.70
+available). This time the **operator read the dashboard directly**, not a
+Mind's self-report: every Mind currently shows **0.00 cognitions
+available**. This is a real, independently-verified constraint, not a
+repeat of the earlier false claim, and it reframes the root-cause
+investigation above — a Mind with zero cognition budget may be unable to
+run full reasoning to produce the JSON decision contract at all,
+regardless of persona/system-prompt configuration. The persona-mismatch
+theory documented in this file may have been correlated with, rather than
+the root cause of, the refusal pattern. Needs retesting once cognitions are
+topped up before drawing further conclusions either way. Per the Creative
+Minds Jam rules, eligible participants can request a cognition boost from
+Animoca Brands/Minds by Animoca Brands — no confirmed self-serve top-up
+path found yet.
+
 ## No persisted reconciliation for ambiguous sends
 
 `sendMessage` to Minds has no client-supplied idempotency key in this SDK
