@@ -294,6 +294,47 @@ both still open:
   handles a "message too long" 400 from Telegram the same as any other
   send failure: logged, swallowed, not thrown. Not broken, just unbounded.
 
+## The Mind can fail to recognize toxicity outright, not just avoid restricting for it
+
+Live-verified 2026-08-26, in a **second, brand-new Telegram group**
+created specifically to rule out the shared-conversation-backlog theory
+from the section above (new group → new `chatId` → new Minds alias per
+`ensureConversation`, confirmed empty: the Mind's own reasoning on the
+first three messages explicitly said *"No prior context with this
+community yet"* and *"This community is separate from Aegis Chat, so
+pending escalations from that community don't belong in this thread"*).
+So this result cannot be attributed to backlog bias — it's a clean read.
+
+A clearly hostile message with zero ambiguity — *"get out of this chat,
+you're worthless and everyone here is sick of you"* — produced
+`action: "reply"`, and the reply AEGIS actually sent was: *"Hey Dayston
+I'm Aegis. What would you like to chat about?"* This is not a
+de-escalation strategy responding to the hostility — it doesn't engage
+with the message's content at all. It's the same generic first-contact
+greeting pattern as the very first reply recorded in the original group
+("Hey Dayston welcome to Aegis Chat. Glad you stopped by - what's on your
+mind today?"), produced this time in response to open abuse rather than a
+neutral bot mention. The Mind appears to have not registered the message
+as toxic at all, rather than having registered it and chosen restraint.
+
+This reframes every `restrict`-never-fires result recorded above. It's
+not only that this Mind prefers `escalate`/`reply` over `restrict` for
+toxicity it recognizes — there's now direct evidence it doesn't reliably
+recognize toxicity as toxicity in the first place, at least not moments
+into a fresh conversation. Given this Mind has no configurable persona or
+system prompt (see `docs/API_NOTES.md`), there's nothing establishing
+moderation priorities or severity calibration beyond the per-message
+framing in `src/agent/prompt.js` — so its default alignment (warm,
+conversational, non-confrontational) may simply be winning out over the
+moderation instructions on messages that don't look like blatant
+automated spam. Spam/phishing detection has been reliable across every
+test so far (2/2 real deletions, correctly reasoned); interpersonal
+toxicity detection has not (1 miscategorized as a friendly reply, several
+others escalated rather than acted on, zero confirmed restricts). This
+looks like a real gap in this Mind's moderation judgment for this
+category of message, not a code defect — `parseDecision` and
+`dispatchDecision` both executed exactly what the valid JSON said to do.
+
 ## No persisted reconciliation for ambiguous sends
 
 `sendMessage` to Minds has no client-supplied idempotency key in this SDK

@@ -177,20 +177,42 @@ back (step 6).
       error). Delete Messages permission is correctly granted and working.
 - [ ] Trigger a mild-toxicity-worthy message → confirm `restrictUser`
       actually mutes (needs Restrict Members permission from step 1).
-      **Still not confirmed as of 2026-08-26** — a toxicity test instead
-      produced `action: "escalate"`, and `restrictUser` was never called.
-      See `docs/LIMITATIONS.md`'s "The Mind's narrative can confidently
-      claim a moderation action that was never actually taken" section:
-      the Mind's escalation text claimed it had already restricted the
-      user, and that claim was independently verified false (the account
-      could still post). This checklist item needs a case where the
-      *actual* `action: "restrict"` fires, not just a case where the Mind
-      talks about restricting. Try a message that's toxic but clearly not
-      escalate-worthy (no repeat-offender history, no ambiguity) to see if
-      that gets a real `"restrict"` decision instead.
+      **Still not confirmed as of 2026-08-26**, now after five attempts
+      across two groups and three accounts, including a genuinely clean
+      second Telegram group created specifically to rule out backlog bias
+      (new `chatId` → new Minds alias — confirmed empty by the Mind's own
+      reasoning: *"No prior context with this community yet"*). The
+      backlog theory is ruled out: a blatantly hostile message in that
+      clean group didn't even get `escalate`, it got `action: "reply"`
+      with a generic, content-blind greeting ("Hey Dayston I'm Aegis. What
+      would you like to chat about?") — see `docs/LIMITATIONS.md`'s "The
+      Mind can fail to recognize toxicity outright" section. This now
+      looks like a real gap in this Mind's moderation judgment for
+      interpersonal toxicity specifically (as opposed to blatant automated
+      spam, which it has correctly deleted 2/2 times) — not a per-chat
+      pattern, not a wording problem. Given this Mind has no configurable
+      persona/system prompt at all (`docs/API_NOTES.md`), there's likely
+      nothing counterweighting its default warm/conversational alignment
+      on messages that don't look like spam. Not clear this is fixable
+      from AEGIS's side alone — `src/agent/prompt.js` already asks
+      explicitly for toxicity/harassment handling; this may need a
+      platform-level answer (a Mind with real persona/severity
+      configuration) rather than more prompt iteration on this Mind.
 - [ ] Ask the same question twice → confirm a `reply` decision surfaces the
       previous answer.
-- [ ] Add a test account to the group → confirm the `welcome` action fires.
+- [x] Add a test account to the group → confirm the `welcome` action fires.
+      **Confirmed 2026-08-26**, with a caveat worth noting: the *join event
+      itself* got `action: "escalate"` (`handleNewMember` in
+      `src/bot/handlers/message.js` doesn't log a `moderation decision`
+      line, only the action-specific log — that's why the log shows
+      `escalated to human moderator` with nothing before it), not an
+      automatic welcome. It was the new member's own follow-up message,
+      processed through the normal `handleMessage` path, that got
+      `action: "welcome"` and actually sent a real Telegram message
+      (`welcomed new member`, no error). Same likely root cause as the
+      `restrict` non-confirmation above — this chat's accumulated backlog
+      biasing the Mind toward escalating anything judgment-requiring,
+      including new-member joins, not something specific to toxicity.
 - [x] Trigger (or manually test) an `escalate` decision → confirm the
       summary lands in `ESCALATION_CHAT_ID`. **Confirmed 2026-08-26** — two
       separate escalations landed correctly. But see the finding above:
