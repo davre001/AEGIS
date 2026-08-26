@@ -43,13 +43,14 @@ in a new file.
       allows only one active consumer (poller or webhook) per bot token —
       a second instance (e.g. `npm run dev` left running in one terminal
       plus a manual `npm start` in another) throws a 409 from Telegram's
-      side. Verified 2026-08-24 by reading `telegraf`'s own polling loop
-      (`node_modules/telegraf/lib/core/network/polling.js`): a 401 or 409
-      is re-thrown out of the polling loop, which crashes the whole AEGIS
-      process (`process.exit(1)` in `src/index.js`'s `main().catch`) rather
-      than logging and continuing. This contradicts this project's own
-      "never crash the process" invariant (`CLAUDE.md`) — flag it back
-      (see §6), don't try to fix it yourself.
+      side. As of the 2026-08-26 fix (`src/bot/launch.js`), this no longer
+      crashes the process — it's logged as `"Telegram polling stopped
+      unexpectedly"` and the process stays alive but **stops receiving
+      Telegram updates**, silently, with nothing else to notice it by. So
+      don't run two instances even though it's non-fatal now: you won't get
+      a crash to tell you something's wrong, just a bot that looks alive
+      but isn't moderating. If you hit this, restart the single instance
+      rather than treating the log line as something to route around.
 
 ## 2. Provision Minds
 
@@ -111,19 +112,25 @@ live Minds/Telegram credentials. Each item maps to a named gap in
 `docs/API_NOTES.md` or `docs/LIMITATIONS.md` — go close them, then report
 back (step 6).
 
-- [ ] ~~Bot boots and logs `AEGIS is online and listening for messages`~~ —
-      **this log line is currently unreachable, don't wait for it.**
-      Verified 2026-08-24 by reading `telegraf`'s `launch()`
-      (`node_modules/telegraf/lib/telegraf.js`): it `await`s
-      `startPolling()`, which only returns once the bot stops — so
-      `src/index.js`'s `await bot.launch()` blocks for the entire time the
-      bot is running, and the line right after it never executes during
-      normal operation. This is a real code bug (Telegraf's own docs call
-      `bot.launch()` *without* `await`), but it's a docs/log-line problem,
-      not a sign the bot is down — flag it back (§6), don't fix it
-      yourself. **The real "is it up" signal:** the process is still alive
-      (no crash, no `"failed to start AEGIS"` fatal log) a few seconds after
-      `npm start`.
+- [ ] Bot boots and logs `AEGIS is online and listening for messages`.
+      **Fixed 2026-08-26** — `src/index.js` now waits on `launchBot()`
+      (`src/bot/launch.js`), which resolves via Telegraf's `onLaunch`
+      callback right after the initial handshake succeeds, instead of
+      awaiting `bot.launch()` itself (which only resolves once polling
+      stops). This log line is reachable again; if it's not showing up a
+      few seconds after `npm start`, that's a real signal now, not a known
+      false negative.
+- [ ] **409/401 no longer crashes the process mid-run.** Previously, a
+      second bot instance running concurrently (see the "run exactly one
+      instance" note below) would throw a 409 out of Telegraf's polling
+      loop and crash the whole process via `main().catch`. As of the
+      2026-08-26 fix, a polling failure *after* a successful launch is
+      logged (`"Telegram polling stopped unexpectedly"`) and the process
+      stays alive — but note it also stops receiving Telegram updates at
+      that point with no automatic reconnect, so watch for that log line
+      during live testing rather than assuming a live process means a
+      working poller. A handshake failure *before* launch (e.g. bad token)
+      still crashes at startup, unchanged.
 - [ ] Send an ordinary message in the test group → a `moderation decision`
       log line appears (`src/bot/handlers/message.js`) with an `action` and
       a `latencyMs`.

@@ -123,6 +123,27 @@ silently losing or double-sending money. If AEGIS grows features where a
 missed decision is costly (e.g. an irreversible ban that should have been
 a warning), revisit this and adopt the reconciliation pattern.
 
+## No recovery after a runtime Telegram polling failure
+
+Fixed 2026-08-26: `src/index.js` previously crashed the whole process if
+Telegram's long-polling loop died mid-run (e.g. a 401/409 from running a
+second bot instance concurrently) — a violation of this project's own
+never-crash-on-one-API-error invariant, tracked in `INTEGRATOR.md`.
+`src/bot/launch.js`'s `launchBot()` now distinguishes a startup handshake
+failure (still crashes — genuinely unrecoverable) from a post-launch
+polling failure (logged via `"Telegram polling stopped unexpectedly"`,
+process stays alive).
+
+What's still missing: once polling dies post-launch, nothing attempts to
+restart it, and there's no signal beyond that one log line — no changed
+`process.exitCode`, no health check, no metric a process supervisor
+(systemd/pm2) could key off. The process looks alive but is no longer
+moderating anything. This is a deliberate scope call for now, not an
+oversight: building reconnect-with-backoff or a liveness endpoint is more
+machinery than a single-process MVP needs, and an operator watching logs
+will see the error line. If AEGIS moves to unattended/supervised
+deployment, revisit this and add an explicit liveness signal.
+
 ## No startup verification of Telegram bot permissions
 
 `deleteMessage` and `restrictUser` (`src/actions/`) assume the bot has

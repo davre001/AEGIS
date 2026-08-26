@@ -1,6 +1,7 @@
 import { config } from "./config.js";
 import { logger } from "./utils/logger.js";
 import { createBot } from "./bot/bot.js";
+import { launchBot } from "./bot/launch.js";
 
 process.on("unhandledRejection", (err) => {
   // A rejected promise can reject with a non-Error value; pino's err
@@ -19,7 +20,7 @@ async function main() {
   logger.info({ nodeEnv: config.nodeEnv }, "starting AEGIS");
 
   const bot = createBot();
-  await bot.launch();
+  await launchBot(bot);
   logger.info("AEGIS is online and listening for messages");
 
   const shutdown = (signal) => {
