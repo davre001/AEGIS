@@ -143,6 +143,157 @@ whether that was an intentional DM test or a stray message, since the
 live-verification checklist in `INTEGRATOR.md` calls for group messages
 specifically.
 
+### Update, 2026-08-26: JSON decision contract confirmed working, against a fresh custom Mind with real cognitions — root cause was very likely cognitions, not persona
+
+New hellominds.ai account, new custom Mind ("Aegis-") created via "Create
+Your Mind" rather than a pre-built template species. As recorded in
+`docs/API_NOTES.md`, this creation flow has **no persona/system-prompt
+input at all** — just a name — and the resulting Mind has no
+settings/edit surface afterward either. Cognition balance: 181.99
+available (vs. the old account's confirmed 0.00).
+
+Using the exact same, unchanged in-message framing from `src/agent/prompt.js`
+that was refused on every prior run against the old account, two real
+Telegram group messages round-tripped successfully:
+- A bare bot-mention message → `action: "none"`, with a genuine
+  contextual `reason` string ("Message is just a bare bot mention with no
+  content, question, or actionable issue...") — this is real JSON-contract
+  output, not the `unparseable_agent_response` safe-fallback that every
+  previous run produced.
+- A second message → `action: "reply"` with real `replyContent`, dispatched
+  through `sendReply` and confirmed sent via Telegram (`sent reply`,
+  `messageId: 47`) — **the first fully successful autonomous moderation
+  action end to end in this project's history.** Visually confirmed in the
+  Telegram group itself, not just in logs: AEGIS's actual reply read *"Hey
+  Dayston welcome to Aegis Chat. Glad you stopped by - what's on your mind
+  today?"* — genuinely responsive to the sender, not generic filler.
+
+This strongly reframes every refusal recorded above (2026-08-18 through
+2026-08-26): this Mind has *no configurable persona whatsoever*, yet it
+correctly followed the JSON contract once given real cognition budget. The
+persona/system-prompt mismatch theory was, at most, a contributing factor
+on the old template-based "companion" Mind — not the primary cause. The
+0.00-cognitions finding from 2026-08-24 looks like the real root cause all
+along.
+
+Still open, unchanged: reply latency remains high and variable (41163ms
+then 28328ms for these two messages, consistent with the ~28–41s range
+recorded across every live run so far) and `askAgent`'s 30s default
+`timeoutMs` continues to be exceeded without ever triggering the
+`"minds agent reply timed out"` path — this SDK behavior is still
+unexplained, not something this run resolves. Next: continue the rest of
+`INTEGRATOR.md`'s live-verification checklist (delete/restrict/welcome/
+escalate, memory, continuity, autonomy) against this Mind now that the
+core decision pipeline is confirmed working.
+
+## The Mind's narrative can confidently claim a moderation action that was never actually taken
+
+Live-verified 2026-08-26, same session as the JSON-contract confirmation
+above. A repeat-offender toxicity message (sender `6552914817`, text
+"shut up, nobody asked, you're an idiot and this whole chat is a waste of
+time") correctly produced `action: "escalate"` rather than `"restrict"` —
+`dispatchDecision` (`src/actions/index.js`) only calls `restrictUser` for
+a literal `"restrict"` action, and that's exactly what ran here, nothing
+more. The code behaved correctly.
+
+The problem is inside `escalationSummary` itself — free-text the Mind
+writes, which `escalate.js` forwards verbatim to the human moderator with
+no factual validation (there's no way to validate prose against reality
+via a JSON schema). It stated *"I already applied a 600s restriction that
+is still active"* and asked the human whether to delete the flagged
+message or extend the "cooling-off period." A second decision minutes
+later repeated the same claim near-verbatim. **This claim is false,
+independently verified live:** the flagged account could still post in
+the group afterward. `restrictUser` was never invoked in this session —
+there is no `"restricted user"` log entry anywhere in the log, only the
+two `"deleted message"` entries and two `"escalated to human moderator"`
+entries that actually happened.
+
+This is a sharper, higher-stakes instance of the lesson already recorded
+above from 2026-08-20 (the false "out of cognition credits" claim):
+**text inside a Mind's reply is not verified fact, even inside a validly
+parsed, contract-compliant response, and even a confident first-person
+claim about an action the Mind says it already took.** The earlier
+instance was about the Mind's own account state, checkable against a
+dashboard the human could read directly. This one is about real-world
+moderation state — whether a real Telegram account is actually muted —
+forwarded straight into the one channel this project's design relies on
+a human to trust: the escalation summary. A moderator acting on the
+summary at face value could reasonably, but wrongly, believe the account
+was already contained and deprioritize following up.
+
+Not a code bug to fix by tightening `decision.js`'s contract — that
+contract validates the *shape* of `action`/`reason`/`replyContent`/
+`restrictSeconds`/`escalationSummary` (types), not whether the prose
+inside them is true, which isn't something a schema can validate. Worth
+considering instead: have `escalate.js` prepend a short, fixed disclaimer
+to every escalation message (e.g. "Note: only the structured action
+AEGIS actually executed — visible in its own log line — is a real state
+change; treat the summary below as the agent's own account, not verified
+fact") so a human moderator never has to guess which part of the message
+is ground truth.
+
+### Update, 2026-08-26: escalated wording upgraded from "unverified claim" to confirmed fabrication with specific, checkable false details
+
+A third, previously-clean test account (`dami904`, id `1410697729`) sent a
+one-off toxic message with no scam/repeat-offense history attached. It
+still produced `action: "escalate"` rather than `"restrict"` — so
+`restrictUser` remains unconfirmed as of this update, every toxicity test
+so far has resulted in escalation instead. The escalation's `From:`/
+`Message:` header was accurate (code-inserted, not agent-authored, same
+as before). But the Mind's own prose this time invented specific,
+falsifiable claims that directly contradict AEGIS's own log:
+
+| Claim in the escalation | What AEGIS's own log actually shows |
+|---|---|
+| davre0's abusive message "now seen 3x (14:50:36, 14:51:30, 15:02:05)" | davre0 was processed exactly twice, at `14:49:11` (delete) and `14:50:05` (escalate). None of the three cited timestamps exist in the log. |
+| "Prior restriction expired just before this re-flag. Re-applying 600s." | No restriction was ever applied — `restrictUser` has not been called a single time this entire session, for anyone. There is nothing to "re-apply." |
+| Dayston's "Delete the message" "from 14:54:43" | Actually processed at `14:52:36` — a different, invented timestamp. |
+
+This moves the finding from "the Mind's narrative isn't verified, treat it
+with suspicion" to **the Mind fabricates specific, plausible-sounding
+event details — timestamps, repeat counts, a restriction lifecycle — with
+no basis in what AEGIS actually did**, and packages it in confident,
+operational-sounding language ("Re-applying 600s," "Pattern suggests
+escalations may not reach you in time"). A human moderator has no way to
+tell this apart from a genuine status report without independently
+re-deriving it from AEGIS's own logs, which defeats the point of an
+escalation summary being a trustworthy shortcut. This raises the priority
+of the disclaimer fix proposed above from "nice to have" to "worth doing
+before this is used in a real community" — a human acting on the "3x
+repeat, restriction re-applied" framing above would reasonably deprioritize
+following up on davre0, when in fact nothing has been done about them at
+all.
+
+### Update, 2026-08-26: disclaimer fix implemented and passed reliability-auditor review
+
+`escalate.js` now prepends `AGENT_NARRATIVE_DISCLAIMER` — a fixed line
+separating the code-inserted factual header from the Mind's own prose —
+before every `escalationSummary`, per this repo's review-gate rule
+(`CLAUDE.md`). Covered by `test/escalate.test.js` (3 tests: disclaimer
+appears before the agent's narrative; the factual header survives with no
+summary; a failed send is still logged and swallowed, not thrown).
+`reliability-auditor` passed this with two follow-ups, neither blocking,
+both still open:
+
+- **Habituation risk.** A static disclaimer is a reasonable response given
+  there's no per-user/per-session action-history store in this codebase
+  today for `escalate.js` to cross-reference `escalationSummary` claims
+  against and strip/flag specific false ones (confirmed by grep — no such
+  store exists) — building that would be a new feature, not a small fix.
+  But a moderator who's seen the same boilerplate on several escalations
+  in a row may skim past it. If this matters in practice, the next step
+  up would be that action-history cross-reference, not a bigger disclaimer.
+- **No length guard against Telegram's ~4096 UTF-16-code-unit cap.** The
+  disclaimer adds ~292 characters to every escalation, marginally
+  lowering the `escalationSummary` length that would push a message over
+  the limit. This risk existed before this change too (an unbounded LLM
+  free-text field could already overflow it) — the fix shifts the
+  threshold down, it doesn't introduce a new failure mode — and the
+  existing `catch (err) { logger.error(...) }` in `escalate.js` already
+  handles a "message too long" 400 from Telegram the same as any other
+  send failure: logged, swallowed, not thrown. Not broken, just unbounded.
+
 ## No persisted reconciliation for ambiguous sends
 
 `sendMessage` to Minds has no client-supplied idempotency key in this SDK

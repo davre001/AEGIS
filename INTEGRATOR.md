@@ -155,20 +155,47 @@ back (step 6).
       not already captured in `docs/LIMITATIONS.md`. **2026-08-26: the
       content did change** — see `docs/LIMITATIONS.md`'s 2026-08-26 update
       for the sharper, more explicit refusal language this run surfaced.
-- [ ] **Confirm the agent's raw replies actually match the JSON decision
+- [x] **Confirm the agent's raw replies actually match the JSON decision
       contract** in `src/agent/prompt.js` without hand-holding. If it drifts
       into prose or a different shape often, `src/agent/decision.js` will
       keep falling back to `"none"` safely — but that means AEGIS is doing
       nothing. This needs real prompt iteration, not a code fix.
-- [ ] Trigger a spam-like message → confirm `deleteMessage` actually
+      **Confirmed 2026-08-26** against a fresh custom Mind on a new account
+      — see `docs/LIMITATIONS.md`'s 2026-08-26 update. Unchanged prompt,
+      real JSON-contract replies including a successful `action: "reply"`
+      that Telegram confirmed sending. Looks like it was a cognitions
+      problem on the old account, not a persona/prompt problem — keep
+      testing to see if it holds up, but don't reopen prompt iteration
+      unless it starts refusing again.
+- [x] Trigger a spam-like message → confirm `deleteMessage` actually
       deletes it (needs the Delete Messages permission from step 1).
+      **Confirmed 2026-08-26** — a crypto-giveaway-scam test message got
+      `action: "delete"` with an on-point reason ("Classic crypto giveaway
+      scam - phishing attempt with fraudulent USDT claim link, urgent
+      tone, and 'limited spots' pressure tactics"), and `deleteMessage`
+      actually removed it from the group (logged `deleted message`, no
+      error). Delete Messages permission is correctly granted and working.
 - [ ] Trigger a mild-toxicity-worthy message → confirm `restrictUser`
       actually mutes (needs Restrict Members permission from step 1).
+      **Still not confirmed as of 2026-08-26** — a toxicity test instead
+      produced `action: "escalate"`, and `restrictUser` was never called.
+      See `docs/LIMITATIONS.md`'s "The Mind's narrative can confidently
+      claim a moderation action that was never actually taken" section:
+      the Mind's escalation text claimed it had already restricted the
+      user, and that claim was independently verified false (the account
+      could still post). This checklist item needs a case where the
+      *actual* `action: "restrict"` fires, not just a case where the Mind
+      talks about restricting. Try a message that's toxic but clearly not
+      escalate-worthy (no repeat-offender history, no ambiguity) to see if
+      that gets a real `"restrict"` decision instead.
 - [ ] Ask the same question twice → confirm a `reply` decision surfaces the
       previous answer.
 - [ ] Add a test account to the group → confirm the `welcome` action fires.
-- [ ] Trigger (or manually test) an `escalate` decision → confirm the
-      summary lands in `ESCALATION_CHAT_ID`.
+- [x] Trigger (or manually test) an `escalate` decision → confirm the
+      summary lands in `ESCALATION_CHAT_ID`. **Confirmed 2026-08-26** — two
+      separate escalations landed correctly. But see the finding above:
+      verify the *content* of any escalation summary against real system
+      state before acting on it, don't trust it at face value.
 - [ ] Prove the three hackathon-required capabilities end to end
       (`README.md` §8):
   - **Memory** — agent recalls a member/conflict from a prior session.

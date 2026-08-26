@@ -93,6 +93,22 @@ signatures — not just the docs.
   `mind.species`, etc.) on 2026-08-20 — persona/system-prompt/instructions
   configuration isn't covered by either. It appears to be dashboard-UI-only,
   in a settings view separate from the account overview page.
+- **Update, 2026-08-26: no persona/system-prompt UI exists for a custom
+  Mind either, not just "not yet located."** A fresh account's "Create Your
+  Mind" flow (as opposed to picking a pre-built template species like
+  "Decision Mind" or "Chief of Staff Mind" from the Bazaar) only prompts
+  for a name — no persona/instructions field — and creates the Mind
+  immediately. The resulting Mind's detail page (cognition balance,
+  subscription, wallet, "Chat on the app" / "Link Your Telegram") has no
+  edit/settings/pencil affordance anywhere for persona or system prompt.
+  So this isn't a location problem, it's most likely a real capability gap
+  for custom Minds as of 2026-08-26: **there may be no user-facing way to
+  set a custom Mind's persona/system prompt at all**, distinct from
+  whatever a pre-built template species bakes in. This sharpens (doesn't
+  contradict) the 2026-08-20 note above — that note was written testing a
+  template-based Mind, this one is a blank custom Mind, and the surface
+  still isn't there. Still worth raising with Creative Minds
+  mentors/support directly rather than continuing to search the dashboard.
 - **Live-verified 2026-08-26** (first real run since the `bot.launch()` fix
   in `src/bot/launch.js` — see `docs/LIMITATIONS.md`): full round trip
   confirmed end to end (Telegram → `askAgent` → `parseDecision`) against
