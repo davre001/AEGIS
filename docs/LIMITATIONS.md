@@ -105,6 +105,44 @@ Minds Jam rules, eligible participants can request a cognition boost from
 Animoca Brands/Minds by Animoca Brands — no confirmed self-serve top-up
 path found yet.
 
+### Update, 2026-08-26: refusal reconfirmed post-fix, with a sharper, more explicit root cause
+
+First live run against real Telegram traffic since the `bot.launch()` fix
+(see the "No recovery after a runtime Telegram polling failure" section
+below). Three ordinary group messages round-tripped end to end and all
+three landed on `action: "none"` / `reason: "unparseable_agent_response"`,
+same safe-fallback contract as every prior run — not a new bug, the same
+open item, reconfirmed under the fixed code path.
+
+The refusal language this time is more explicit than the "not how I hear
+your actual voice" phrasing recorded 2026-08-20. The Mind now states the
+refusal directly in mechanical terms: *"I'm not going to output that JSON
+schema for you. I'm not the mod bot."* — naming the JSON-contract request
+itself as the thing it's declining, not just objecting to tone/framing.
+This is a stronger, more specific signal than earlier runs and worth
+leading with when raising this with Creative Minds mentors.
+
+**Notable side observation, not yet confirmed as reliable:** the same
+replies show the Mind distinguishing new messages from earlier ones within
+the conversation ("same wrapper, same answer" / "the inner content this
+time isn't a probe... reads like an actual person") — i.e. it appears to
+be tracking conversation history within a thread, independent of the
+JSON-contract refusal. This is *not* the same claim as the cross-alias
+memory question above (which is about memory bleeding across distinct
+Telegram chats/aliases) — this is ordinary single-conversation history,
+which `ensureConversation`'s alias binding would provide regardless. Noted
+here only because it's the first concrete evidence the memory mechanism is
+functioning at all; it does not confirm the hackathon's cross-session
+continuity requirement (`README.md` §4A), which still needs its own
+dedicated test (stop/restart the process, confirm recall).
+
+One of the three test messages arrived with `chatId` equal to `senderId`
+(`1770749476`), i.e. a Telegram DM to the bot rather than a group message
+(`chatId: -1004368201540` for the other two) — worth double-checking
+whether that was an intentional DM test or a stray message, since the
+live-verification checklist in `INTEGRATOR.md` calls for group messages
+specifically.
+
 ## No persisted reconciliation for ambiguous sends
 
 `sendMessage` to Minds has no client-supplied idempotency key in this SDK

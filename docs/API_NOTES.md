@@ -93,6 +93,20 @@ signatures — not just the docs.
   `mind.species`, etc.) on 2026-08-20 — persona/system-prompt/instructions
   configuration isn't covered by either. It appears to be dashboard-UI-only,
   in a settings view separate from the account overview page.
+- **Live-verified 2026-08-26** (first real run since the `bot.launch()` fix
+  in `src/bot/launch.js` — see `docs/LIMITATIONS.md`): full round trip
+  confirmed end to end (Telegram → `askAgent` → `parseDecision`) against
+  real group traffic. Three replies measured: 38202ms, 34808ms, 36006ms —
+  consistent with the ~34–38s range already recorded 2026-08-24, so this is
+  a stable, repeatable latency range for this Mind, not a one-off. The 30s
+  default `timeoutMs` in `askAgent` (`src/agent/mindsClient.js`) is
+  routinely *below* actual reply time; every one of these three would have
+  hit the timeout path had the caller used the default instead of
+  reconfirming this range is already known — flag to the backend owner if
+  the default hasn't been revisited since this measurement.
+  Persona-refusal reconfirmed (see `docs/LIMITATIONS.md`'s 2026-08-26
+  update for the sharper detail this run surfaced about what the refusal
+  actually says).
 
 ## Telegram (via `telegraf`)
 

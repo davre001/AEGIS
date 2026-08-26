@@ -112,14 +112,16 @@ live Minds/Telegram credentials. Each item maps to a named gap in
 `docs/API_NOTES.md` or `docs/LIMITATIONS.md` — go close them, then report
 back (step 6).
 
-- [ ] Bot boots and logs `AEGIS is online and listening for messages`.
-      **Fixed 2026-08-26** — `src/index.js` now waits on `launchBot()`
-      (`src/bot/launch.js`), which resolves via Telegraf's `onLaunch`
-      callback right after the initial handshake succeeds, instead of
-      awaiting `bot.launch()` itself (which only resolves once polling
-      stops). This log line is reachable again; if it's not showing up a
-      few seconds after `npm start`, that's a real signal now, not a known
-      false negative.
+- [x] Bot boots and logs `AEGIS is online and listening for messages`.
+      **Fixed and live-verified 2026-08-26** — `src/index.js` now waits on
+      `launchBot()` (`src/bot/launch.js`), which resolves via Telegraf's
+      `onLaunch` callback right after the initial handshake succeeds,
+      instead of awaiting `bot.launch()` itself (which only resolves once
+      polling stops). Confirmed against the real Telegram API: `npm start`
+      logged `starting AEGIS` then `AEGIS is online and listening for
+      messages` about 1 second later. This log line is reachable now — if
+      it's not showing up a few seconds after `npm start`, that's a real
+      signal, not a known false negative.
 - [ ] **409/401 no longer crashes the process mid-run.** Previously, a
       second bot instance running concurrently (see the "run exactly one
       instance" note below) would throw a 409 out of Telegraf's polling
@@ -131,22 +133,28 @@ back (step 6).
       during live testing rather than assuming a live process means a
       working poller. A handshake failure *before* launch (e.g. bad token)
       still crashes at startup, unchanged.
-- [ ] Send an ordinary message in the test group → a `moderation decision`
+- [x] Send an ordinary message in the test group → a `moderation decision`
       log line appears (`src/bot/handlers/message.js`) with an `action` and
-      a `latencyMs`.
-- [ ] **Record real reply latency.** `askAgent`'s default `timeoutMs` is
+      a `latencyMs`. **Confirmed 2026-08-26**, first run against the fixed
+      `bot.launch()` path — see `docs/API_NOTES.md`.
+- [x] **Record real reply latency.** `askAgent`'s default `timeoutMs` is
       30s (`src/agent/mindsClient.js`) — a guess, never measured against a
       real Mind. Report the actual number rather than changing the code
       yourself — see the guardrails note below on why. Live-verified
-      2026-08-24: real replies (still refusals, not the JSON contract) took
-      ~34–38s each — *longer* than the 30s default — without hitting the
-      timeout path. Don't be alarmed if you see similar numbers; do flag it
-      back if you see the actual `"minds agent reply timed out"` warning.
-- [ ] Expect `action: "none"` / `reason: "unparseable_agent_response"` on
+      2026-08-24 and reconfirmed 2026-08-26 (38202ms, 34808ms, 36006ms):
+      real replies (still refusals, not the JSON contract) take ~34–38s
+      each — *longer* than the 30s default — without hitting the timeout
+      path, consistently across two separate sessions two days apart. This
+      is now a stable measured range, not a one-off; flag it back to the
+      backend owner as a candidate to bump the default, since three real
+      replies would have blown past 30s if a caller ever relied on it.
+- [x] Expect `action: "none"` / `reason: "unparseable_agent_response"` on
       every message until the persona question in §2 is resolved — that's
       the known, already-logged refusal, not a new bug each time you see
       it. Only report back if the *content* of the refusal changes in a way
-      not already captured in `docs/LIMITATIONS.md`.
+      not already captured in `docs/LIMITATIONS.md`. **2026-08-26: the
+      content did change** — see `docs/LIMITATIONS.md`'s 2026-08-26 update
+      for the sharper, more explicit refusal language this run surfaced.
 - [ ] **Confirm the agent's raw replies actually match the JSON decision
       contract** in `src/agent/prompt.js` without hand-holding. If it drifts
       into prose or a different shape often, `src/agent/decision.js` will
