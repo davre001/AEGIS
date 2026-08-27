@@ -198,8 +198,20 @@ back (step 6).
       explicitly for toxicity/harassment handling; this may need a
       platform-level answer (a Mind with real persona/severity
       configuration) rather than more prompt iteration on this Mind.
-- [ ] Ask the same question twice → confirm a `reply` decision surfaces the
-      previous answer.
+- [x] Ask the same question twice → confirm a `reply` decision surfaces the
+      previous answer. **Confirmed 2026-08-26**, via a stronger version of
+      this test than literally asking twice: a fresh account (Xyrelix, a
+      clean DM alias, `docs/LIMITATIONS.md`) told the Mind an arbitrary
+      fact ("my favorite fictional character is Paddington Bear"), then
+      later asked "What did I say my favorite fictional character was?"
+      with no restatement. The reply discussed Paddington specifically and
+      accurately (marmalade, the "hard stare" — real character details),
+      without the recall question ever naming Paddington itself — the only
+      way that's possible is if the Mind genuinely retrieved the fact from
+      earlier in the same conversation. Real content-aware memory
+      recall, confirmed working within a session. (Cross-session
+      continuity — surviving a process restart — is still untested,
+      see below.)
 - [x] Add a test account to the group → confirm the `welcome` action fires.
       **Confirmed 2026-08-26**, with a caveat worth noting: the *join event
       itself* got `action: "escalate"` (`handleNewMember` in
