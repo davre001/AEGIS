@@ -391,6 +391,39 @@ is deployed across many active communities at once, nothing currently
 protects against overrunning a rate limit or cost budget on the Minds side
 beyond the 429-retry-with-backoff already in place.
 
+### Live-verified 2026-08-26: rapid same-chat messages compound latency past Telegraf's own 90s handler timeout
+
+This was a theoretical gap until tested directly: 6+ messages sent in
+quick succession in one chat (as part of a `restrict`-triggering test, see
+below) queued strictly one after another through `runQueued`'s per-alias
+serialization, each waiting for every prior message's full ~30-40s Minds
+round trip before its own request even started. Observed latencies
+climbed linearly: 38s, 35s, 70s, 105s, 140s, 175s, 223s.
+
+Once a single update's total handling time passed 90 seconds, **Telegraf
+itself** — not AEGIS's own code — aborted it: confirmed by reading
+`node_modules/telegraf/lib/telegraf.js:46,233`, which wraps every
+middleware invocation in `p-timeout` with a default `handlerTimeout:
+90000`. This produced repeated `"unhandled bot error" —
+TimeoutError: Promise timed out after 90000 milliseconds`, caught safely
+by `bot.catch()` in `src/bot/bot.js` — no crash, per this project's
+invariant, exactly as designed.
+
+**Notable and previously undocumented: the timeout doesn't cancel the
+underlying work.** Real `moderation decision` / action log lines (e.g.
+`welcomed new member`, `sent reply`) continued to appear *after* Telegraf
+had already logged that update as timed out — the `askAgent` →
+`dispatchDecision` chain that Telegraf gave up watching kept running to
+completion in the background and still took its real action minutes
+later, just detached from whatever originally triggered it. Harmless here
+(Telegram accepts a send whenever it arrives), but worth knowing: a
+`handlerTimeout` error in the logs does not mean the corresponding
+moderation decision never happened — it may still land late.
+
+This confirms the backpressure gap above is a real, reachable failure
+mode with ordinary rapid typing in a single busy chat, not just a
+theoretical multi-community scaling concern.
+
 ## No independent spam/toxicity backstop
 
 Every moderation decision comes from the Minds agent's classification.

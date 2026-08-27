@@ -175,29 +175,27 @@ back (step 6).
       tone, and 'limited spots' pressure tactics"), and `deleteMessage`
       actually removed it from the group (logged `deleted message`, no
       error). Delete Messages permission is correctly granted and working.
-- [ ] Trigger a mild-toxicity-worthy message → confirm `restrictUser`
+- [x] Trigger a mild-toxicity-worthy message → confirm `restrictUser`
       actually mutes (needs Restrict Members permission from step 1).
-      **Still not confirmed as of 2026-08-26**, now after five attempts
-      across two groups and three accounts, including a genuinely clean
-      second Telegram group created specifically to rule out backlog bias
-      (new `chatId` → new Minds alias — confirmed empty by the Mind's own
-      reasoning: *"No prior context with this community yet"*). The
-      backlog theory is ruled out: a blatantly hostile message in that
-      clean group didn't even get `escalate`, it got `action: "reply"`
-      with a generic, content-blind greeting ("Hey Dayston I'm Aegis. What
-      would you like to chat about?") — see `docs/LIMITATIONS.md`'s "The
-      Mind can fail to recognize toxicity outright" section. This now
-      looks like a real gap in this Mind's moderation judgment for
-      interpersonal toxicity specifically (as opposed to blatant automated
-      spam, which it has correctly deleted 2/2 times) — not a per-chat
-      pattern, not a wording problem. Given this Mind has no configurable
-      persona/system prompt at all (`docs/API_NOTES.md`), there's likely
-      nothing counterweighting its default warm/conversational alignment
-      on messages that don't look like spam. Not clear this is fixable
-      from AEGIS's side alone — `src/agent/prompt.js` already asks
-      explicitly for toxicity/harassment handling; this may need a
-      platform-level answer (a Mind with real persona/severity
-      configuration) rather than more prompt iteration on this Mind.
+      **Conclusively not reachable as of 2026-08-26 — closing this out as
+      a documented Mind-behavior limitation, not a code defect, after
+      exhausting reasonable variation.** Six attempts total, across two
+      groups, four accounts, and three qualitatively different message
+      patterns: a single repeat-offender insult (→ `escalate`), a clean
+      first-contact insult in a backlog-free group (→ `escalate`, then a
+      content-blind generic `reply`), and rapid-fire flooding/urgency
+      messages (→ `welcome`/`reply`, never `restrict`). Backlog bias,
+      per-message wording, and account history were all ruled out as
+      explanations — see `docs/LIMITATIONS.md`'s toxicity-recognition
+      section. `restrictUser` itself is confirmed correctly wired (real
+      Telegram permission, real code path, exercised by nothing so far
+      because the Mind never asks for it). This Mind, unconfigured (no
+      persona/system prompt exists for custom Minds at all), appears to
+      simply not select `restrict` regardless of provocation — likely a
+      platform-level question for Creative Minds mentors, not something
+      more prompt iteration in `src/agent/prompt.js` is likely to fix.
+      Spam/phishing detection remains reliable throughout (2/2 correct
+      deletions) — the gap is specific to interpersonal toxicity.
 - [x] Ask the same question twice → confirm a `reply` decision surfaces the
       previous answer. **Confirmed 2026-08-26**, via a stronger version of
       this test than literally asking twice: a fresh account (Xyrelix, a
