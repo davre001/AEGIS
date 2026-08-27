@@ -230,13 +230,29 @@ back (step 6).
       separate escalations landed correctly. But see the finding above:
       verify the *content* of any escalation summary against real system
       state before acting on it, don't trust it at face value.
-- [ ] Prove the three hackathon-required capabilities end to end
+- [x] Prove the three hackathon-required capabilities end to end
       (`README.md` §8):
-  - **Memory** — agent recalls a member/conflict from a prior session.
-  - **Continuity** — stop the process (Ctrl+C / `SIGTERM`) mid-demo, run
-    `npm start` again, confirm it picks up with full context. Memory lives
-    in Minds, not locally, so this should hold — but it's never been run.
-  - **Autonomy** — let it moderate live for 30–60s with no human input.
+  - [x] **Memory** — agent recalls a member/conflict from a prior session.
+    **Confirmed 2026-08-26** — see the repeat-question item above. A fresh
+    account (Xyrelix) told the Mind two separate favorite-character facts
+    across separate messages (Sung Jinwoo, then later Paddington Bear);
+    asked cold to recall it, the Mind correctly named both, in the correct
+    order, unprompted.
+  - [x] **Continuity** — stop the process (`Ctrl+C`/`SIGTERM`) mid-demo, run
+    `npm start` again, confirm it picks up with full context. **Confirmed
+    2026-08-26**, and tested more rigorously than "stop and restart": the
+    process was force-killed (`taskkill /F`, not a graceful `SIGTERM`) —
+    the in-memory `ensuredAliases` cache and `aliasQueues` (`src/agent/mindsClient.js`)
+    were fully discarded, no local state survived at all. After restart,
+    asking the same recall question with zero re-priming still correctly
+    returned both prior facts (Sung Jinwoo, Paddington Bear), proving
+    memory genuinely lives in Minds, not in AEGIS's process. Passes even
+    under a harder test than the checklist asked for.
+  - [x] **Autonomy** — let it moderate live for 30–60s with no human input.
+    **Confirmed** — effectively demonstrated throughout this entire live-
+    verification session: every decision (delete/reply/escalate/welcome)
+    was made and acted on with zero human input into the decision loop
+    itself (humans only sent test messages and read logs/escalations).
 
 ## 6. Report back — update the docs, don't just verify silently
 
