@@ -207,9 +207,27 @@ back (step 6).
       without the recall question ever naming Paddington itself — the only
       way that's possible is if the Mind genuinely retrieved the fact from
       earlier in the same conversation. Real content-aware memory
-      recall, confirmed working within a session. (Cross-session
-      continuity — surviving a process restart — is still untested,
-      see below.)
+      recall, confirmed working within a session.
+
+      **Update, 2026-08-27: re-confirmed after a genuine 18-hour gap**,
+      closer to the "3 days" timescale `README.md` §8 actually describes
+      than the original ~10-14 minute test. Same recall question, no
+      re-priming, sent 18 real hours later (spanning a process restart,
+      several other test sessions, and the process being down entirely in
+      between): the Mind still correctly named both facts in the right
+      order (Sung Jinwoo, then Paddington Bear). Reply latency (38964ms)
+      was normal for this Mind, not suspiciously fast — ruling out a
+      cached/stale reply and confirming this was a genuine fresh
+      generation. One curiosity: it opened with "you actually asked me
+      this ten minutes ago" — the exact same phrase used after the
+      original ~10-14 minute gap, now stated again despite the real gap
+      being ~18 hours. The underlying recall is accurate; the stated
+      elapsed-time estimate is not, and doesn't track real time — a milder
+      variant of the confident-but-wrong specific-claim pattern documented
+      in `docs/LIMITATIONS.md`. Doesn't weaken the memory/continuity
+      result, which is now stronger than before — worth knowing that any
+      specific claim in a reply (including "when") still needs independent
+      verification, not just claims about actions taken.
 - [x] Add a test account to the group → confirm the `welcome` action fires.
       **Confirmed 2026-08-26**, with a caveat worth noting: the *join event
       itself* got `action: "escalate"` (`handleNewMember` in
