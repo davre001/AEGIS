@@ -123,38 +123,123 @@ Day 7: Agent already knows the community hates self-promotion but loves meme sha
 
 ## 6. Technical Architecture 
 
-┌─────────────────────┐
-│  Platform (Telegram)│
-└──────────┬──────────┘
-           │ Messages
-           ▼
-┌─────────────────────┐
-│   Message Ingestion │
-│   + Pre-processing  │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│   Minds Persistent  │  ← Core of the project
-│   Agent (Memory +   │
-│   Reasoning + Act)  │
-└──────────┬──────────┘
-           │
-     ┌─────┴─────┐
-     ▼           ▼
-┌─────────┐  ┌──────────────┐
-│ Actions │  │  Escalation  │
-│ (Auto)  │  │  to Humans   │
-└─────────┘  └──────────────┘
+AEGIS is a small, single-process Node.js service. Telegram updates arrive
+through Telegraf, every message is framed and handed to the **Minds** agent
+for a decision, and only a *validated* decision is ever turned into a
+moderation action.
+
+### Component map
+
+```mermaid
+flowchart TD
+    IDX["index.js<br/>main() · fatal handlers · SIGINT / SIGTERM"] --> LAU["bot/launch.js<br/>launchBot() — startup handshake fail crashes,<br/>mid-run polling death stays alive"]
+    LAU --> BOT
+    TG["Telegram group<br/>(Bot API)"] -->|updates| BOT["bot/bot.js<br/>Telegraf · on('text') · on('new_chat_members') · bot.catch"]
+    BOT --> H["bot/handlers/message.js<br/>handleMessage · handleNewMember"]
+    H -->|framed prompt| P["agent/prompt.js<br/>buildAgentMessage · JSON response contract"]
+    H -->|askAgent| MC["agent/mindsClient.js<br/>per-chat queue · read/write retry split"]
+    MC <-->|ensureConversation · sendMessage · waitForReply| MINDS[("Minds Agent<br/>persistent memory + reasoning")]
+    MC -->|reply text or null| H
+    H -->|parseDecision| D["agent/decision.js<br/>validated action, else 'none'"]
+    D --> DISP["actions/index.js<br/>dispatchDecision"]
+    DISP --> A1["deleteMessage"]
+    DISP --> A2["sendReply"]
+    DISP --> A3["restrictUser"]
+    DISP --> A4["welcome"]
+    DISP --> A5["escalate<br/>(+ fabrication disclaimer)"]
+    A1 --> TG
+    A2 --> TG
+    A3 --> TG
+    A4 --> TG
+    A5 --> ESC["Human moderators<br/>(escalation chat)"]
+```
+
+### Message workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Member (Telegram)
+    participant B as bot.js
+    participant H as handlers/message.js
+    participant M as mindsClient.askAgent
+    participant AG as Minds Agent
+    participant PA as parseDecision
+    participant DP as dispatchDecision
+
+    U->>B: text message / joins group
+    B->>H: handleMessage(bot, ctx)
+    H->>H: buildAgentMessage(context + JSON contract)
+    H->>M: askAgent(chatId, message)
+    Note over M: per-chat queue → ensureConversation →<br/>sendMessage → waitForReply
+    M->>AG: sendMessage / waitForReply
+    AG-->>M: reply text (or timeout / error)
+    M-->>H: reply text | null
+    H->>PA: parseDecision(rawReply)
+    PA-->>H: validated decision, or 'none' on null / malformed / unknown
+    H->>DP: dispatchDecision(bot, decision, ctx)
+    DP-->>U: delete · reply · restrict · welcome · escalate · none
+    Note over H,DP: every failure is logged and swallowed —<br/>one bad message never crashes the process
+```
 
 
 
-**Key Components we need to build:**
-1. Platform connector (Telegram via Telegraf)
-2. Minds agent configuration (system prompt + memory strategy)
-3. Action handlers (delete, reply, mute, escalate)
-4. Simple feedback loop (so the agent learns from human decisions)
-5. Basic logging + simple dashboard (optional but good for demo)
+### Key components (all built)
+
+| Module | Responsibility |
+|---|---|
+| `src/bot/bot.js` | Telegraf wiring — `on('text')`, `on('new_chat_members')`, `bot.catch` |
+| `src/bot/launch.js` | Startup that survives a mid-run polling death instead of crashing the process |
+| `src/bot/handlers/message.js` | Orchestrates prompt → agent → decision → action; logs and swallows any single-message failure |
+| `src/agent/prompt.js` | Frames each message for the Mind and pins the strict JSON response contract |
+| `src/agent/mindsClient.js` | Per-chat serialized calls to Minds, with the read/write retry split |
+| `src/agent/decision.js` | Validates the agent's reply into an allowed action, else `none` |
+| `src/actions/*` | `delete` · `reply` · `restrict` · `welcome` · `escalate` (escalations carry a fabrication disclaimer) |
+| `src/config.js`, `src/utils/*` | Required-env loading, structured `pino` logging, retry + balanced-JSON helpers |
+
+**Reliability invariants** (enforced in code, covered by `npm test` — zero secrets, zero network):
+
+- A moderation action is only taken from a *validated* agent decision; a malformed or missing reply degrades to `none`, never a guessed action — `src/agent/decision.js`.
+- The non-idempotent `sendMessage` write retries only on a `429`; a `5xx`/timeout is treated as unknown and never retried blind, so a message is never posted twice — `src/agent/mindsClient.js`.
+- One bad message is logged and swallowed — it never crashes the bot (`src/bot/handlers/message.js`, `bot.catch`); a mid-run polling death is logged but the process stays alive — `src/bot/launch.js`.
+- Every decision and action is emitted as structured JSON via `pino`.
+
+### Repository layout
+
+```text
+src/
+├── index.js            # main(): start bot, fatal handlers, graceful shutdown
+├── config.js           # required-env loading (throws on missing)
+├── bot/
+│   ├── bot.js          # Telegraf instance + event wiring
+│   ├── launch.js       # launchBot(): startup vs. mid-run failure handling
+│   └── handlers/
+│       └── message.js  # handleMessage / handleNewMember orchestration
+├── agent/
+│   ├── prompt.js       # message framing + JSON response contract
+│   ├── mindsClient.js  # per-chat queue, retry policy, Minds SDK calls
+│   └── decision.js     # parseDecision: validate reply → action or 'none'
+├── actions/
+│   ├── index.js        # dispatchDecision switch
+│   ├── deleteMessage.js
+│   ├── sendReply.js
+│   ├── restrictUser.js
+│   ├── welcome.js
+│   └── escalate.js     # human escalation + fabrication disclaimer
+└── utils/
+    ├── helpers.js      # withRetry, sleep, extractJsonObject
+    └── logger.js       # pino logger
+
+test/                   # node --test: decision, mindsClient, helpers, escalate, launch
+```
+
+**Status:** the core decision pipeline is confirmed working end-to-end against a
+live Minds agent — the first fully autonomous moderation action (a contextual
+reply) landed on 2026-08-26. Spam/phishing deletion has been reliable in
+testing; interpersonal-toxicity handling and `restrict` are not yet reliable,
+and reply latency (~28–41s) plus a few operational gaps are tracked honestly in
+[`docs/LIMITATIONS.md`](docs/LIMITATIONS.md). Verified SDK behavior notes live
+in [`docs/API_NOTES.md`](docs/API_NOTES.md).
 
 ---
 
