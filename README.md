@@ -216,3 +216,32 @@ npm test
 # Run
 npm start
 ```
+
+### Starting and stopping the bot
+
+Only one instance can poll Telegram per bot token — starting a second one
+while another is running causes a 409 that's logged but silent (see
+`docs/LIMITATIONS.md`), so check nothing's already running first.
+
+Foreground (recommended — `Ctrl+C` sends a real `SIGINT`, which runs
+AEGIS's own graceful shutdown in `src/index.js`):
+
+```bash
+npm start
+```
+
+Backgrounded/detached, if you need the terminal back:
+
+```bash
+# Bash (Git Bash)
+npm start &
+tasklist //FI "IMAGENAME eq node.exe"   # find the PID
+taskkill //PID <pid> //T //F            # stop it
+```
+
+```powershell
+# PowerShell
+Start-Process npm -ArgumentList "start" -NoNewWindow
+Get-Process node                        # find the PID
+Stop-Process -Id <pid> -Force
+```
