@@ -2,122 +2,82 @@
  
 ---
 
-## 1. Project Overview 
+## 1. Project Overview
 
-**AEGIS** is a persistent AI agent that acts as a long-term, intelligent moderator and community caretaker for content creators.
+AEGIS is a persistent AI moderator for Telegram communities. It reads a group's messages, decides what — if anything — each one needs, and acts on its own, pulling in a human only for the cases that genuinely need one.
 
-Unlike traditional bots that only follow fixed rules (e.g. “delete messages containing X word”), this agent:
+Traditional moderation bots follow fixed rules ("delete any message containing word X"). They can't tell a genuine question from spam, they don't know who anyone is, and they forget everything the moment they restart. AEGIS is built the opposite way: it is backed by a [Minds](https://build.hellominds.ai) agent that gives it long-term memory, so it behaves less like a keyword filter and more like a moderator who has actually been in the room for weeks.
 
-- Learns the unique culture, tone, and unwritten rules of each community over time
-- Remembers past conversations, conflicts, and positive members
-- Makes context-aware decisions
-- Acts autonomously while escalating only the important cases to humans
+- Learns each community's culture, tone, and unwritten rules over time
+- Remembers individual members, past conflicts, and what has already been answered
+- Makes context-aware decisions instead of matching keywords
+- Acts autonomously, and escalates only the genuinely hard cases
 
-**Core goal**: Free creators from hours of daily moderation work so they can focus on creating content, while keeping their communities healthy and welcoming.
-
----
-
-## 2. The Real Problem We Are Solving
-
-Creators who run communities (Discord, Telegram, YouTube Community posts, etc.) face these daily pains:
-
-- Spending 1–3 hours every day deleting spam, answering the same questions repeatedly, and handling mild toxicity
-- Losing creative energy and getting burnout
-- Current bots are dumb: they either ban too aggressively or miss context
-- New members feel lost, veterans get tired of answering the same things
-- Important community knowledge (old helpful posts, past resolutions) gets buried
-
-Our agent directly attacks these problems by becoming the community’s permanent memory and first responder.
+**Goal:** free creators from hours of daily moderation so they can get back to creating, while their community stays healthy and welcoming even when no human is watching.
 
 ---
 
-## 3. How It Works 
+## 2. The Problem We're Solving
 
+Running a busy community chat is a second full-time job, and most of it is the same work on repeat:
 
-### Step-by-step process:
+- **Hours lost every day** — creators burn 1–3 hours deleting spam, answering the same handful of questions, and smoothing over small flare-ups.
+- **Burnout** — it never stops and it is rarely interesting, so it quietly drains the creative energy the community was built for.
+- **Blunt tools** — keyword bots either ban too aggressively or miss obvious context; they have no idea who a person is or what was said a minute ago.
+- **Lost newcomers** — new members show up with questions nobody has the energy to answer for the hundredth time, so they drift away.
+- **Buried knowledge** — the best answer to a recurring question was already written weeks ago, then scrolled out of sight for good.
 
-1. **Ingest**  
-   The agent continuously receives messages from Telegram.
+AEGIS takes the first pass at all of it: it absorbs the repetitive majority of the work, remembers everything, and only brings in a human when a situation actually deserves one.
 
-2. **Understand Context**  
-   Using its persistent memory, the agent looks at:
-   - Who is speaking (new member? known positive member? previous troublemaker?)
-   - What has happened in this conversation before
-   - Community norms it has learned over days/weeks
-   - Similar past situations and how they were resolved
+---
 
-3. **Decide**  
-   The agent classifies the message into categories:
-   - Spam / Bot
-   - Repeated question
-   - Mild toxicity / off-topic
-   - Positive contribution
-   - Complex / sensitive issue
+## 3. How It Works
 
-4. **Act Autonomously** (most cases)
-   - Delete or hide spam
-   - Softly warn for mild issues
-   - Reply with the correct answer by surfacing an old helpful post
-   - Welcome new members and pair them with veterans
-   - Silently log everything for learning
+Every message runs through the same short pipeline:
 
-5. **Escalate** (only when needed)
-   - Sends a clean summary + full context to the human moderator (creator or trusted mods)
-   - Waits for human decision and learns from it
-
-6. **Learn & Improve**
-   - Every action and human feedback is stored in the agent’s long-term memory
-   - Over time the agent becomes more accurate and gentler/stricter according to the community’s real culture
+1. **Ingest** — AEGIS receives each new message, and each new member, from Telegram in real time.
+2. **Understand context** — before deciding anything, it draws on its persistent memory: who is speaking (a brand-new arrival? a reliable regular? someone with a history?), what has already happened in the conversation, the norms it has learned for this specific community, and how similar situations were handled before.
+3. **Decide** — the message is framed for the Minds agent, which returns one structured decision limited to six validated actions: **delete**, **reply**, **restrict**, **welcome**, **escalate**, or **none**. If the reply is missing or malformed, AEGIS falls back to `none` — it never acts on a guess.
+4. **Act** — it carries out that decision itself: remove spam, answer with the right information, mute a repeat offender, welcome a newcomer, or deliberately do nothing.
+5. **Escalate** — when a case is genuinely sensitive, it hands a clean summary and the full context to the human moderators instead of acting. Every escalation carries a fixed disclaimer that separates the facts AEGIS is sure of from the agent's own narrative, so a human is never misled by a fabricated claim.
+6. **Learn** — every decision, action, and piece of human feedback is written back to long-term memory, so the agent grows more accurate and better tuned to the community the longer it runs.
 
 ---
 
 ## 4. Detailed Features
 
-### A. Core Persistence Features (Must-have for the hackathon)
-- **Long-term Memory**: Remembers individual members, past conflicts, community rules, and successful interventions across days and sessions
-- **Continuity**: When the agent restarts, it continues exactly where it left off — no loss of knowledge
-- **Autonomous Action**: Performs moderation tasks without waiting for human input most of the time
+**A. Persistence — the core**
+- **Long-term memory** — remembers individual members, past conflicts, the community rules it has learned, and which interventions actually worked, across days and restarts.
+- **Continuity** — when the process restarts, it resumes exactly where it left off; nothing it has learned is lost.
+- **Autonomous action** — handles the common cases on its own, without waiting on a human.
 
-### B. Moderation Capabilities
-- Auto-detect and handle spam / repeated links / bots
-- Detect repeated questions and reply with previous good answers
-- Contextual soft moderation (e.g. “Hey, we keep this channel focused on X — here’s a better place”)
-- Escalation system with full conversation history + agent reasoning
+**B. Moderation**
+- Detects and removes spam, repeated links, and bot-posted content.
+- Recognizes repeated questions and answers them by surfacing the earlier good answer.
+- Applies gentle, contextual moderation ("let's keep this channel focused on X — here's a better spot for that") instead of blunt bans.
+- Escalates with the full conversation history and its own reasoning attached.
 
-### C. Community Care Features
-- Smart welcome messages for new members
-- Suggest pairing new members with active veterans
-- Surface old helpful posts when relevant questions appear again
-- Quietly highlight positive members (optional recognition)
+**C. Community care**
+- Welcomes new members in the community's own tone.
+- Surfaces old, still-relevant posts when a familiar question comes up again.
+- Keeps quiet track of positive, helpful contributors.
 
-### D. Creator Dashboard (Simple version for MVP)
-- Live view of what the agent is doing
-- List of escalated cases
-- Memory insights (e.g. “Top recurring questions this week”)
-- Ability to give feedback so the agent learns faster
+**D. Creator dashboard** *(planned, not yet built)*
+- A live view of what the agent is doing, the queue of escalated cases, and memory insights (for example, the week's top recurring questions) — plus a feedback channel the agent can learn from.
 
 ---
 
-## 5. Example User Scenarios 
+## 5. Example User Scenarios
 
-**Scenario 1 – Repeated Question**  
-New member: “How do I join the private group?”  
-Agent remembers this was answered 4 times last week → Replies with the exact previous answer + link → Logs it.
+**Repeated question.** A new member asks, "How do I join the private group?" AEGIS recognizes the question was answered several times last week, replies with the same correct answer and link, and logs it — no human needed.
 
-**Scenario 2 – Mild Toxicity**  
-Member A: “You’re so dumb for saying that”  
-Agent checks history: Member A is usually positive → Soft warning + reminder of community tone → No ban.
+**Mild toxicity.** Someone snaps, "You're so dumb for saying that." AEGIS checks the sender's history, sees a normally positive member having a bad moment, and responds with a light nudge about the community's tone rather than reaching for a ban.
 
-**Scenario 3 – Spam**  
-Bot posts 5 links in 10 seconds → Agent immediately removes them and mutes for 10 minutes.
+**Spam.** A bot dumps five links in ten seconds. AEGIS removes them and mutes the account almost immediately — usually before most of the group has even seen them.
 
-**Scenario 4 – Complex Case**  
-Heated argument involving personal attacks → Agent pauses, gathers full context, and escalates to human with a clear summary:  
-“Here’s what happened in the last 15 messages + past history between these two members.”
+**Complex case.** A heated argument tips into personal attacks. Instead of guessing, AEGIS pauses, gathers the full context, and escalates to a human with a clear summary: what happened across the last several messages, plus the past history between the two people involved.
 
-**Scenario 5 – Memory Over Time**  
-Day 1: Agent is cautious  
-Day 7: Agent already knows the community hates self-promotion but loves meme sharing → Adjusts behavior automatically.
+**Memory over time.** On day one the agent is cautious and checks in often. By day seven it has learned that this community dislikes self-promotion but loves meme sharing, and it adjusts its own behavior to match.
 
 ---
 
@@ -243,64 +203,50 @@ in [`docs/API_NOTES.md`](docs/API_NOTES.md).
 
 ---
 
-## 7. MVP Scope for the Hackathon (What we must finish)
+## 7. How We Prove the Three Required Minds Capabilities
 
-**Must have (for strong demo):**
-- Working Telegram bot connected to a Minds agent
-- Persistent memory that survives restarts
-- At least 3 autonomous actions (spam handling, repeated question reply, soft warning)
-- Escalation to a human (Telegram DM or private group)
-- Clear demonstration of memory across sessions
+| Capability | How AEGIS demonstrates it |
+|---|---|
+| **Memory** | The agent recalls a specific member and a conflict from days earlier and factors both into the decision it makes right now. |
+| **Continuity** | Restart the process mid-demo and it resumes with its full knowledge of the community intact — nothing is lost. |
+| **Autonomous action** | Left running on a live chat, it moderates for a stretch with no human input, taking real actions on its own. |
 
-**Nice to have:**
-- Simple web dashboard
-- Positive member recognition
-
-**Out of scope for this jam:**
-- Multi-language advanced NLP
-- Full multi-platform support
-- Complex reward systems
+Autonomous action is not a claim on paper: the first fully autonomous moderation action — a contextual reply — was verified end-to-end against a live Minds agent on 2026-08-26. See [`INTEGRATOR.md`](INTEGRATOR.md) for the integration write-up, and [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) for an honest account of what is and is not reliable yet.
 
 ---
 
-## 8. How We Prove the Three Required Minds Capabilities
+## 8. Setup Instructions
 
-| Capability       | How we demonstrate it in the demo video |
-|------------------|-----------------------------------------|
-| Memory           | Show the agent remembering a member and past conflict from 3 days ago |
-| Continuity       | Restart the agent mid-demo → it continues with full knowledge |
-| Autonomous Action| Let the agent moderate live for 30–60 seconds without human input |
-
----
-
-## 11. Setup Instructions (for teammates)
-
-The platform is Telegram (not Discord — see `backend_implementation.md`),
-and the backend is Node.js + Telegraf + Minds. See `docs/API_NOTES.md` and
-`docs/LIMITATIONS.md` for what's been verified against the real Minds SDK.
+**Prerequisites:** Node.js ≥ 22 and npm. The platform is Telegram (not Discord),
+and the backend is Node.js + Telegraf + Minds. See [`docs/API_NOTES.md`](docs/API_NOTES.md)
+and [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) for what has been verified against the
+real Minds SDK.
 
 ```bash
 git clone <this repo's URL>
 cd AEGIS
 
-# Install dependencies
-npm install
+# Install the exact, locked dependencies
+npm ci
 
 # Configure
 cp .env.example .env
 # Fill in:
-# - TELEGRAM_BOT_TOKEN   (from @BotFather)
+# - TELEGRAM_BOT_TOKEN      (from @BotFather)
 # - MINDS_BUILDER_API_KEY
 # - MINDS_MIND_ID
 # - ESCALATION_CHAT_ID
 
-# Verify without any credentials (no secrets/network required)
+# Verify without any credentials (no secrets or network required)
 npm run lint
 npm test
 
 # Run
 npm start
 ```
+
+> **Secrets:** `.env` holds real tokens and is gitignored — never commit it.
+> `.env.example` documents the required variables with safe placeholder values.
 
 ### Starting and stopping the bot
 
