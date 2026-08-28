@@ -1,5 +1,14 @@
 # AEGIS
- 
+
+**Persistent AI moderation for Telegram — backed by a [Minds](https://build.hellominds.ai) agent for long-term memory.**
+
+[![CI](https://img.shields.io/github/actions/workflow/status/davre001/AEGIS/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=CI)](https://github.com/davre001/AEGIS/actions)
+[![Minds](https://img.shields.io/badge/Minds-Integrated-00C853?style=for-the-badge)](https://build.hellominds.ai)
+[![Platform](https://img.shields.io/badge/Platform-Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://core.telegram.org/bots)
+[![Node](https://img.shields.io/badge/Node-22%2B-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![Tests](https://img.shields.io/badge/Tests-24%20passing-00C853?style=for-the-badge)](test/)
+[![License](https://img.shields.io/badge/License-MIT-9E9E9E?style=for-the-badge)](LICENSE)
+
 ---
 
 ## 1. Project Overview
