@@ -232,7 +232,7 @@ npm ci
 # Configure
 cp .env.example .env
 # Fill in:
-# - TELEGRAM_BOT_TOKEN      (from @BotFather)
+# - TELEGRAM_BOT_TOKEN      
 # - MINDS_BUILDER_API_KEY
 # - MINDS_MIND_ID
 # - ESCALATION_CHAT_ID
